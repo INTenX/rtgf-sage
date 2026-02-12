@@ -1,7 +1,7 @@
 {
-  "name": "rtgf-rcm",
+  "name": "rtgf-sage",
   "version": "0.1.0",
-  "description": "Runtime Context Management - Git-native LLM conversation archival for RTGF framework",
+  "description": "SAGE - Session Archive & Governance Engine. Git-native LLM conversation archival for RTGF framework",
   "type": "module",
   "main": "index.js",
   "bin": {
@@ -16,13 +16,15 @@
   "keywords": [
     "llm",
     "conversation-management",
+    "session-archival",
     "git-native",
     "rtgf",
+    "sage",
     "claude",
     "chatgpt",
     "gemini"
   ],
-  "author": "",
+  "author": "Makanui LLC",
   "license": "Apache-2.0",
   "dependencies": {
     "blessed": "^0.1.81",

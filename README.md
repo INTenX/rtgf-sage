@@ -1,16 +1,17 @@
-# rtgf-rcm
+# SAGE - Session Archive & Governance Engine
 
-**Runtime Context Management - Git-Native LLM Conversation Archival**
+**Git-Native LLM Conversation Management for RTGF**
 
-Version: 0.1.0 (Phase 0 MVP)
+Version: 0.1.0 (Phase 0, 2, 4, 5 Complete)
 License: Apache 2.0
-Status: Internal Development
+Author: Makanui LLC
+Status: Production-Ready
 
 ---
 
 ## Overview
 
-RCM (Runtime Context Management) treats LLM conversations as version-controlled knowledge artifacts. It provides agent-agnostic session archival, cross-platform conversation management, and git-native knowledge flow curation.
+SAGE treats LLM conversations as version-controlled knowledge artifacts. Built on the RCM (Runtime Context Management) module, it provides agent-agnostic session archival, cross-platform conversation management, and git-native knowledge flow curation.
 
 **Problem:** LLM conversations scattered across platforms (Claude Code, ChatGPT, Gemini) with no unified archival, versioning, or reuse strategy.
 
@@ -23,7 +24,8 @@ RCM (Runtime Context Management) treats LLM conversations as version-controlled 
 ### Installation
 
 ```bash
-cd /home/cbasta/rtgf-rcm
+git clone https://github.com/YOUR_USERNAME/rtgf-sage.git
+cd rtgf-sage
 npm install
 npm link  # Make CLI tools globally available
 ```
