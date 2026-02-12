@@ -1,0 +1,124 @@
+# RCM Module Configuration
+# Runtime Context Management for RTGF framework
+
+module:
+  name: rcm
+  version: 0.1.0
+  description: "Git-native LLM conversation archival and knowledge flow management"
+
+platforms:
+  supported:
+    - name: claude-code
+      enabled: true
+      watch_paths:
+        - ~/.claude/projects/
+      file_pattern: "**/*.jsonl"
+      adapter: adapters/claude-code.js
+
+    - name: chatgpt
+      enabled: true
+      import_format: json
+      adapter: adapters/chatgpt.js
+
+    - name: gemini
+      enabled: true
+      import_format: json
+      adapter: adapters/gemini.js
+
+archive:
+  raw:
+    enabled: true
+    path: archive/raw/
+    description: "Original platform formats (immutable)"
+
+  canonical:
+    enabled: true
+    path: archive/canonical/
+    format: yaml
+    schema_version: "1.0"
+    naming_convention: "{date}_{title-slug}_{short-id}.yaml"
+    directory_structure: "{year}/{month}/"
+
+flows:
+  enabled: true
+  path: flows/
+  states:
+    - name: hypothesis
+      description: "Auto-imported, untagged sessions"
+      auto_import: true
+      quality_gate: none
+
+    - name: codified
+      description: "Tagged, structured, manually curated"
+      quality_gate: manual_review
+
+    - name: validated
+      description: "Quality-checked, production-ready"
+      quality_gate: quality_score_threshold
+      min_quality_score: 70
+
+    - name: promoted
+      description: "RAG-indexed, knowledge base ready"
+      quality_gate: manual_approval
+      export_on_promote: true
+
+fidelity:
+  default: standard
+  levels:
+    minimal:
+      size_estimate: "~1KB"
+      fields: [metadata_only]
+    standard:
+      size_estimate: "~10-50KB"
+      fields: [conversation, thinking, tool_uses, usage_metrics]
+    full:
+      size_estimate: "~100KB-1MB"
+      fields: [everything, platform_raw]
+
+auto_sync:
+  enabled: false  # Enable manually after testing
+  daemon_mode: false
+  watch_interval: 5000  # milliseconds
+  auto_commit: true
+  commit_prefix: "rcm(import)"
+
+export:
+  formats:
+    - name: markdown
+      enabled: true
+      serializer: serializers/markdown.js
+      use_case: "AnythingLLM ingestion, human reading"
+
+    - name: json
+      enabled: true
+      serializer: serializers/json.js
+      use_case: "API consumption, programmatic access"
+
+integrations:
+  rag:
+    provider: anythingllm
+    auto_export: false
+    export_on_promote: true
+    output_format: markdown
+
+  observability:
+    enabled: false
+    provider: null  # phoenix, helicone (Phase 3+)
+
+  prompt_governance:
+    enabled: false
+    provider: null  # promptlayer (Phase 3+)
+
+git:
+  auto_commit: true
+  commit_conventions:
+    import: "rcm(import): Import {platform} session {session_id}"
+    convert: "rcm(convert): Convert {source} to canonical format"
+    flow: "rcm(flow): {action} session {session_id} ({from_state} → {to_state})"
+    promote: "rcm(promote): Promote session {session_id} to {state}"
+  require_clean_working_tree: false
+
+rtgf_integration:
+  enabled: false  # Enable when deployed to client repos
+  config_path: null  # Path to parent RTGF config.yaml
+  bind_to_client: null  # client-a, client-b, client-c, personal

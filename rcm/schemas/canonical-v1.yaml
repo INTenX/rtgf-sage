@@ -1,0 +1,209 @@
+# RCM Canonical Session Format v1.0
+# Based on Open Message Format (OMF) with RTGF extensions
+# Standard fidelity: full conversation + tool use + thinking + usage metrics
+
+schema_version: "1.0"
+standard: "OMF-compatible"
+
+description: |
+  Universal session format for LLM conversations across platforms.
+  Preserves essential context while maintaining platform independence.
+
+fields:
+  session:
+    id:
+      type: string
+      format: uuid-v4
+      required: true
+      description: "Canonical session identifier (generated, not platform ID)"
+
+    canonical_version:
+      type: string
+      required: true
+      description: "Schema version for compatibility checking"
+
+    created_at:
+      type: string
+      format: iso8601
+      required: true
+      description: "Session creation timestamp (UTC, millisecond precision)"
+
+    updated_at:
+      type: string
+      format: iso8601
+      required: true
+      description: "Last modification timestamp (UTC, millisecond precision)"
+
+    source:
+      platform:
+        type: string
+        enum: [claude-code, chatgpt, gemini, other]
+        required: true
+      platform_version:
+        type: string
+        required: false
+      session_id:
+        type: string
+        required: true
+        description: "Original platform session ID (for traceability)"
+
+    metadata:
+      title:
+        type: string
+        required: false
+        description: "Human-readable session title (auto-generated or manual)"
+      summary:
+        type: string
+        required: false
+        description: "Session summary (generated or manual)"
+      tags:
+        type: array
+        items: string
+        required: false
+        description: "Keywords for discovery (e.g., openclaw, workflow, bug-fix)"
+      participants:
+        type: array
+        items: string
+        required: false
+        description: "List of participants (e.g., user, claude-opus-4.5)"
+      working_directory:
+        type: string
+        required: false
+      git_context:
+        branch:
+          type: string
+          required: false
+        repo:
+          type: string
+          required: false
+        commit_hash:
+          type: string
+          required: false
+
+    flow_state:
+      current:
+        type: string
+        enum: [hypothesis, codified, validated, promoted]
+        required: true
+        description: "Current Knowledge Flow state (RTGF extension)"
+      quality_score:
+        type: number
+        min: 0
+        max: 100
+        required: false
+        description: "Quality assessment score (for validated/promoted states)"
+
+  messages:
+    type: array
+    required: true
+    description: "Conversation messages in chronological order"
+    items:
+      id:
+        type: string
+        format: uuid-v4
+        required: true
+        description: "Message identifier (platform UUID or generated)"
+      parent_id:
+        type: string
+        format: uuid-v4
+        required: false
+        description: "Parent message ID (for tree-structured conversations)"
+      timestamp:
+        type: string
+        format: iso8601
+        required: true
+      role:
+        type: string
+        enum: [user, assistant, system, tool]
+        required: true
+        description: "OMF-compatible role field"
+      model:
+        type: string
+        required: false
+        description: "Model identifier (e.g., claude-opus-4-5-20251101)"
+      content:
+        type: string
+        required: false
+        description: "Primary message content (null if thinking-only)"
+      thinking:
+        type: string
+        required: false
+        description: "Assistant internal reasoning (Claude extended thinking)"
+      tool_uses:
+        type: array
+        required: false
+        description: "Tool invocations within this message"
+        items:
+          tool_name:
+            type: string
+          tool_input:
+            type: object
+          tool_output:
+            type: string
+      usage:
+        input_tokens:
+          type: integer
+        output_tokens:
+          type: integer
+        cache_read_tokens:
+          type: integer
+        cache_write_tokens:
+          type: integer
+
+  fidelity:
+    level:
+      type: string
+      enum: [minimal, standard, full]
+      required: true
+      description: "Fidelity level of this archive"
+    preserved_fields:
+      type: array
+      items: string
+      required: true
+      description: "List of fields preserved at this fidelity level"
+
+fidelity_levels:
+  minimal:
+    description: "Metadata only (~1KB)"
+    preserved: [session.metadata, session.source, message.role, message.timestamp]
+    use_case: "Quick discovery, index building"
+
+  standard:
+    description: "Full conversation + tool use + thinking (~10-50KB)"
+    preserved: [all_metadata, content, thinking, tool_uses, usage_metrics]
+    use_case: "Default archival, RAG ingestion, conversation replay"
+
+  full:
+    description: "Complete lossless archive including platform-specific data (~100KB-1MB)"
+    preserved: [everything, platform_raw_data, file_snapshots, system_messages]
+    use_case: "Forensic analysis, exact platform migration"
+
+examples:
+  standard_fidelity:
+    path: "examples/claude-code-standard.yaml"
+    description: "Claude Code session with standard fidelity"
+
+  chatgpt_import:
+    path: "examples/chatgpt-import.yaml"
+    description: "ChatGPT export converted to canonical format"
+
+validation:
+  required_tools:
+    - js-yaml (YAML parsing)
+    - uuid (ID validation)
+
+  validation_rules:
+    - "session.id must be valid UUIDv4"
+    - "timestamps must be ISO 8601 with timezone"
+    - "flow_state.current must match directory location"
+    - "messages must have unique IDs"
+    - "parent_id must reference existing message or be null"
+
+changelog:
+  v1.0:
+    date: "2026-02-11"
+    changes:
+      - "Initial schema based on Open Message Format (OMF)"
+      - "Added RTGF flow_state extension"
+      - "Defined three fidelity levels"
+      - "Support for Claude Code, ChatGPT, Gemini platforms"
