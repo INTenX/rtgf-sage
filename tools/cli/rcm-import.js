@@ -16,6 +16,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { program } from 'commander';
 import { convertAndSave as convertClaudeCode } from '../adapters/claude-code.js';
+import { convertChatGPT } from '../adapters/chatgpt.js';
+import { convertGemini } from '../adapters/gemini.js';
 import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -24,7 +26,8 @@ const __dirname = path.dirname(__filename);
 // Platform adapter mapping
 const ADAPTERS = {
   'claude-code': convertClaudeCode,
-  // Future: 'chatgpt', 'gemini'
+  'chatgpt': convertChatGPT,
+  'gemini': convertGemini
 };
 
 /**
