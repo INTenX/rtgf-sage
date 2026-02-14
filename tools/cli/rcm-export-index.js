@@ -15,6 +15,7 @@ import path from 'path';
 import yaml from 'js-yaml';
 import { program } from 'commander';
 import fg from 'fast-glob';
+import { execSync } from 'child_process';
 
 program
   .option('-o, --output <path>', 'Output path for index JSON', '/home/cbasta/sage-exports/session-index.json')
@@ -25,6 +26,7 @@ program
     '/home/cbasta/test-knowledge'
   ])
   .option('-w, --wsl <name>', 'WSL instance name', 'ColeWork')
+  .option('--no-pull', 'Skip git pull before indexing')
   .parse();
 
 const options = program.opts();
@@ -32,6 +34,33 @@ const options = program.opts();
 async function exportIndex() {
   console.log('🔍 SAGE Session Index Export');
   console.log('=============================\n');
+
+  // Pull repos first (unless --no-pull)
+  if (options.pull !== false) {
+    console.log('📥 Pulling latest from GitHub...\n');
+    for (const repoPath of options.repos) {
+      try {
+        const repoName = path.basename(repoPath);
+        const gitDir = path.join(repoPath, '.git');
+
+        // Check if repo exists and is a git repo
+        try {
+          await fs.access(gitDir);
+        } catch {
+          console.log(`   ⚠️  ${repoName}: Not a git repo, skipping pull`);
+          continue;
+        }
+
+        // Pull
+        execSync('git pull', { cwd: repoPath, stdio: 'pipe' });
+        console.log(`   ✓ ${repoName}: Pulled latest`);
+      } catch (err) {
+        const repoName = path.basename(repoPath);
+        console.log(`   ⚠️  ${repoName}: Pull failed (${err.message}), continuing with local version`);
+      }
+    }
+    console.log();
+  }
 
   const index = {
     generated_at: new Date().toISOString(),
