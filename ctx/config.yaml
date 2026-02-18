@@ -1,8 +1,8 @@
-# RCM Module Configuration
-# Runtime Context Management for RTGF framework
+# CTX Module Configuration
+# Context Management for RTGF framework (part of LORE)
 
 module:
-  name: rcm
+  name: ctx
   version: 0.1.0
   description: "Git-native LLM conversation archival and knowledge flow management"
 
@@ -80,7 +80,7 @@ auto_sync:
   daemon_mode: false
   watch_interval: 5000  # milliseconds
   auto_commit: true
-  commit_prefix: "rcm(import)"
+  commit_prefix: "ctx(import)"
 
 export:
   formats:
@@ -112,10 +112,10 @@ integrations:
 git:
   auto_commit: true
   commit_conventions:
-    import: "rcm(import): Import {platform} session {session_id}"
-    convert: "rcm(convert): Convert {source} to canonical format"
-    flow: "rcm(flow): {action} session {session_id} ({from_state} → {to_state})"
-    promote: "rcm(promote): Promote session {session_id} to {state}"
+    import: "ctx(import): Import {platform} session {session_id}"
+    convert: "ctx(convert): Convert {source} to canonical format"
+    flow: "ctx(flow): {action} session {session_id} ({from_state} → {to_state})"
+    promote: "ctx(promote): Promote session {session_id} to {state}"
   require_clean_working_tree: false
 
 rtgf_integration:

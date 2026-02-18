@@ -1,4 +1,4 @@
-# SAGE Repository Topology
+# LORE Repository Topology
 
 **Date:** 2026-02-11
 **Author:** Makanui LLC
@@ -7,7 +7,7 @@
 
 ## Overview
 
-SAGE follows RTGF's parent-child binding pattern with **one tools repo** (public) and **multiple knowledge repos** (private per client).
+LORE follows RTGF's parent-child binding pattern with **one tools repo** (public) and **multiple knowledge repos** (private per client).
 
 ```
 rtgf-sage (tools)                    # Public - Apache 2.0
@@ -29,7 +29,7 @@ knowledge    knowledge    knowledge    knowledge    knowledge      knowledge
 **Location:** `/home/cbasta/rtgf-sage/`
 **Visibility:** Public
 **License:** Apache 2.0
-**Purpose:** Reusable SAGE framework, adapters, CLI tools, GUI
+**Purpose:** Reusable LORE framework, adapters, CLI tools, GUI
 
 **Status:** ✅ Git initialized, ready to push
 
@@ -47,7 +47,7 @@ knowledge    knowledge    knowledge    knowledge    knowledge      knowledge
 cd /home/cbasta/rtgf-sage
 gh repo create rtgf-sage \
   --public \
-  --description "SAGE - Session Archive & Governance Engine. Git-native LLM conversation management." \
+  --description "LORE - Session Archive & Governance Engine. Git-native LLM conversation management." \
   --source=. \
   --push
 ```
@@ -70,7 +70,7 @@ All client repos follow identical structure, only client name differs.
 cd /home/cbasta/makanui-knowledge
 gh repo create makanui-knowledge \
   --private \
-  --description "Makanui LLC - LLM session knowledge base (SAGE)" \
+  --description "Makanui LLC - LLM session knowledge base (LORE)" \
   --source=. \
   --push
 ```
@@ -89,7 +89,7 @@ gh repo create makanui-knowledge \
 cd /home/cbasta/intenx-knowledge
 gh repo create intenx-knowledge \
   --private \
-  --description "INTenX Engineering - LLM session knowledge base (SAGE)" \
+  --description "INTenX Engineering - LLM session knowledge base (LORE)" \
   --source=. \
   --push
 ```
@@ -108,7 +108,7 @@ gh repo create intenx-knowledge \
 cd /home/cbasta/sensit-knowledge
 gh repo create sensit-knowledge \
   --private \
-  --description "Sensit Technologies - LLM session knowledge base (SAGE)" \
+  --description "Sensit Technologies - LLM session knowledge base (LORE)" \
   --source=. \
   --push
 ```
@@ -127,7 +127,7 @@ gh repo create sensit-knowledge \
 cd /home/cbasta/ratio11-knowledge
 gh repo create ratio11-knowledge \
   --private \
-  --description "Ratio11 Electronics - LLM session knowledge base (SAGE)" \
+  --description "Ratio11 Electronics - LLM session knowledge base (LORE)" \
   --source=. \
   --push
 ```
@@ -146,7 +146,7 @@ gh repo create ratio11-knowledge \
 cd /home/cbasta/beaglebone-knowledge
 gh repo create beaglebone-knowledge \
   --private \
-  --description "BeagleBone Projects - LLM session knowledge base (SAGE)" \
+  --description "BeagleBone Projects - LLM session knowledge base (LORE)" \
   --source=. \
   --push
 ```
@@ -165,7 +165,7 @@ gh repo create beaglebone-knowledge \
 cd /home/cbasta/test-knowledge
 gh repo create test-knowledge \
   --private \
-  --description "Test knowledge base - SAGE development (23 sessions)" \
+  --description "Test knowledge base - LORE development (23 sessions)" \
   --source=. \
   --push
 ```
@@ -179,7 +179,7 @@ Each client repo contains:
 ```
 {client}-knowledge/
 ├── .git/
-├── config.yaml           # SAGE binding configuration
+├── config.yaml           # LORE binding configuration
 ├── README.md             # Usage instructions
 ├── .gitignore
 └── rcm/
@@ -294,4 +294,4 @@ Map your existing Claude Code sessions to appropriate client repos and begin imp
 **Ready to push:** ✅ All repos have initial commits
 **Total setup time:** ~10 minutes
 
-🎉 **SAGE multi-client topology complete!**
+🎉 **LORE multi-client topology complete!**

@@ -4,10 +4,10 @@
 
 set -e
 
-SAGE_ROOT="/home/cbasta/rtgf-sage"
+LORE_ROOT="/home/cbasta/rtgf-sage"
 CLAUDE_PROJECTS="$HOME/.claude/projects"
 
-echo "🌱 SAGE Production Seeding"
+echo "🌱 LORE Production Seeding"
 echo "=========================="
 echo
 
@@ -20,7 +20,7 @@ for session in \
 do
   if [ -f "$session" ]; then
     echo "  Importing $(basename "$session")..."
-    node "$SAGE_ROOT/tools/cli/rcm-import.js" \
+    node "$LORE_ROOT/tools/cli/rcm-import.js" \
       --source "$session" \
       --platform claude-code \
       --target "$HOME/intenx-knowledge" 2>&1 | grep -E "(✓|✗|Error)" || true
@@ -32,7 +32,7 @@ echo "📦 [2/2] Importing Makanui personal sessions..."
 for session in "$CLAUDE_PROJECTS/-home-cbasta-resale-app"/*.jsonl; do
   if [ -f "$session" ]; then
     echo "  Importing $(basename "$session")..."
-    node "$SAGE_ROOT/tools/cli/rcm-import.js" \
+    node "$LORE_ROOT/tools/cli/rcm-import.js" \
       --source "$session" \
       --platform claude-code \
       --target "$HOME/makanui-knowledge" 2>&1 | grep -E "(✓|✗|Error)" || true
@@ -47,6 +47,6 @@ echo "  INTenX: $(find ~/intenx-knowledge/rcm/archive/canonical -name "*.yaml" 2
 echo "  Makanui: $(find ~/makanui-knowledge/rcm/archive/canonical -name "*.yaml" 2>/dev/null | wc -l) sessions"
 echo
 echo "Next: Browse sessions in Web UI"
-echo "  cd $SAGE_ROOT/tools/web"
+echo "  cd $LORE_ROOT/tools/web"
 echo "  node server.js ~/intenx-knowledge 3000"
 echo

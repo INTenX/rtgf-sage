@@ -6,9 +6,9 @@
 set -e
 
 CLAUDE_PROJECTS="$HOME/.claude/projects"
-SAGE_ROOT="$(cd "$(dirname "$0")" && pwd)"
+LORE_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
-echo "🌱 SAGE Session Seeding Wizard"
+echo "🌱 LORE Session Seeding Wizard"
 echo "================================"
 echo
 echo "Found 46 Claude Code sessions across 5 projects:"
@@ -130,7 +130,7 @@ for project in "${!PROJECT_MAPPING[@]}"; do
       fi
 
       # Import
-      node "$SAGE_ROOT/tools/cli/rcm-import.js" \
+      node "$LORE_ROOT/tools/cli/rcm-import.js" \
         --source "$session_file" \
         --platform claude-code \
         --target "$client_path" \
@@ -153,17 +153,17 @@ echo "  • Skipped: $total_skipped sessions (already imported)"
 echo
 echo "Next steps:"
 echo "  1. Browse sessions in Web UI:"
-echo "     cd $SAGE_ROOT/tools/web"
+echo "     cd $LORE_ROOT/tools/web"
 echo "     node server.js ~/makanui-knowledge 3001"
 echo
 echo "  2. Promote valuable sessions:"
-echo "     node $SAGE_ROOT/tools/cli/rcm-flow.js promote \\"
+echo "     node $LORE_ROOT/tools/cli/rcm-flow.js promote \\"
 echo "       --session SESSION_ID \\"
 echo "       --to codified \\"
 echo "       --tags 'project,topic'"
 echo
 echo "  3. Set up auto-sync for future sessions:"
-echo "     node $SAGE_ROOT/tools/cli/rcm-sync.js \\"
+echo "     node $LORE_ROOT/tools/cli/rcm-sync.js \\"
 echo "       --watch ~/.claude/projects/ \\"
 echo "       --target ~/makanui-knowledge/ \\"
 echo "       --daemon"

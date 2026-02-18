@@ -29,7 +29,7 @@ mkdir -p "$REPO_PATH/rcm/flows/promoted"
 
 # Create config.yaml
 cat > "$REPO_PATH/config.yaml" <<EOF
-# SAGE Knowledge Repository Configuration
+# LORE Knowledge Repository Configuration
 # Client: $CLIENT_NAME
 
 binding:
@@ -70,11 +70,11 @@ EOF
 cat > "$REPO_PATH/README.md" <<EOF
 # $CLIENT_NAME Knowledge Repository
 
-**SAGE Knowledge Base - LLM Session Archive**
+**LORE Knowledge Base - LLM Session Archive**
 
 Client: $CLIENT_NAME
 Created: $(date +%Y-%m-%d)
-Managed by: [SAGE](https://github.com/YOUR_USERNAME/rtgf-sage)
+Managed by: [LORE](https://github.com/YOUR_USERNAME/rtgf-sage)
 
 ---
 
@@ -155,7 +155,7 @@ All operations use git-native commits:
 
 ---
 
-**Powered by [SAGE](https://github.com/YOUR_USERNAME/rtgf-sage) - Session Archive & Governance Engine**
+**Powered by [LORE](https://github.com/YOUR_USERNAME/rtgf-sage) - Session Archive & Governance Engine**
 EOF
 
 # Create .gitignore
@@ -183,7 +183,7 @@ git init
 git add .
 git commit -m "rcm(init): Initialize $CLIENT_NAME knowledge repository
 
-Managed by SAGE (Session Archive & Governance Engine)
+Managed by LORE (Session Archive & Governance Engine)
 Client: $CLIENT_NAME
 
 Directory structure:

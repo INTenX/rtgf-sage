@@ -1,16 +1,16 @@
-# SAGE → AnythingLLM RAG Integration
+# LORE → AnythingLLM RAG Integration
 
-**Purpose:** Connect SAGE promoted sessions to AnythingLLM for semantic search and context retrieval
+**Purpose:** Connect LORE promoted sessions to AnythingLLM for semantic search and context retrieval
 
 ---
 
 ## Overview
 
-**Goal:** Make validated/promoted SAGE sessions searchable and retrievable in AnythingLLM for enhanced context in future conversations.
+**Goal:** Make validated/promoted LORE sessions searchable and retrievable in AnythingLLM for enhanced context in future conversations.
 
 **Flow:**
 ```
-SAGE (promoted) → Markdown Export → AnythingLLM Documents → Vector Embedding → Semantic Search
+LORE (promoted) → Markdown Export → AnythingLLM Documents → Vector Embedding → Semantic Search
 ```
 
 **Value:**
@@ -23,7 +23,7 @@ SAGE (promoted) → Markdown Export → AnythingLLM Documents → Vector Embeddi
 
 ## Architecture
 
-### SAGE Side (Source)
+### LORE Side (Source)
 ```
 intenx-knowledge/
 ├── rcm/flows/promoted/          # Sessions ready for RAG
@@ -113,7 +113,7 @@ ls -lh ~/.anythingllm/documents/intenx/sage-2026-q1/
 
 # 4. Test search in AnythingLLM
 # Query: "What was the TFaaS positioning strategy?"
-# Should return relevant SAGE session
+# Should return relevant LORE session
 ```
 
 ### Automated Export (Cron)
@@ -122,7 +122,7 @@ ls -lh ~/.anythingllm/documents/intenx/sage-2026-q1/
 # Add to cron-daily-import.sh:
 echo "Exporting promoted sessions to AnythingLLM..." | tee -a "$LOG_FILE"
 
-node "$SAGE_ROOT/tools/cli/rcm-export.js" \
+node "$LORE_ROOT/tools/cli/rcm-export.js" \
   --input "$HOME/intenx-knowledge/rcm/flows/promoted/*.yaml" \
   --format markdown \
   --output "$HOME/.anythingllm/documents/intenx/sage-$(date +%Y-q%q)/" \
@@ -138,7 +138,7 @@ curl -X POST http://localhost:3001/api/v1/workspace/intenx/sync \
 
 ## Markdown Export Format
 
-**SAGE exports sessions to RAG-optimized Markdown:**
+**LORE exports sessions to RAG-optimized Markdown:**
 
 ```markdown
 ---
@@ -201,7 +201,7 @@ This session captured the refined TFaaS positioning strategy for Q1 2026, focusi
 
 ---
 
-*Exported from SAGE (Session Archive & Governance Engine)*
+*Exported from LORE (Session Archive & Governance Engine)*
 *Original: /home/cbasta/intenx-knowledge/rcm/flows/promoted/2026-02-tfaas-strategy_abc12345.yaml*
 ```
 
@@ -327,7 +327,7 @@ import error by setting PYTHONPATH to include KiCad's site-packages..."
 
 ## Troubleshooting
 
-### "AnythingLLM not finding SAGE sessions"
+### "AnythingLLM not finding LORE sessions"
 
 **Check:**
 1. Are files in correct directory? (`ls ~/.anythingllm/documents/intenx/`)
@@ -351,7 +351,7 @@ curl http://localhost:3001/api/v1/workspace/intenx/documents \
 **Cause:** Poor tagging, generic titles, missing summaries
 
 **Fix:**
-1. Improve session tagging in SAGE (more specific tags)
+1. Improve session tagging in LORE (more specific tags)
 2. Add summary sections to promoted sessions (manual edit)
 3. Adjust AnythingLLM similarity threshold (lower for more results)
 
@@ -393,8 +393,8 @@ cat /tmp/test-export/*.md
 - [ ] Metadata-based chunking (chunk by message, not token count)
 
 ### Phase 4: Integration (Future)
-- [ ] Claude Code extension: "Search SAGE" command
-- [ ] Browser extension: Right-click → "Add to SAGE"
+- [ ] Claude Code extension: "Search LORE" command
+- [ ] Browser extension: Right-click → "Add to LORE"
 - [ ] Slack bot: "/sage search [query]"
 - [ ] API endpoint: GET /sage/search?q=...
 
@@ -429,14 +429,14 @@ cat /tmp/test-export/*.md
 **Month 1:**
 - [ ] 10+ promoted sessions in RAG
 - [ ] 80%+ search success rate
-- [ ] LLM references SAGE content in responses
+- [ ] LLM references LORE content in responses
 - [ ] Automated export working
 
 **Quarter 1:**
 - [ ] 30+ promoted sessions in RAG
 - [ ] Multi-client workspaces configured (INTenX, Sensit, Makanui)
 - [ ] RAG integrated into daily workflow
-- [ ] Measurable value: "I found that solution in SAGE!" moments
+- [ ] Measurable value: "I found that solution in LORE!" moments
 
 ---
 
@@ -447,4 +447,4 @@ cat /tmp/test-export/*.md
 4. Test search and retrieval
 5. Refine based on results
 
-**Goal:** By end of Q1 2026, SAGE should be your second brain for all LLM interactions.
+**Goal:** By end of Q1 2026, LORE should be your second brain for all LLM interactions.

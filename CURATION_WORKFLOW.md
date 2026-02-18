@@ -1,4 +1,4 @@
-# SAGE Session Curation Workflow
+# LORE Session Curation Workflow
 
 **Purpose:** Guide for curating sessions from hypothesis → promoted for RAG integration
 
@@ -303,7 +303,7 @@ ls -lh ~/anythingllm/documents/intenx/
 
 ### Quality Indicators
 - **Search success rate:** Can you find relevant sessions when needed?
-- **RAG relevance:** Do AnythingLLM results include SAGE content?
+- **RAG relevance:** Do AnythingLLM results include LORE content?
 - **Reuse frequency:** How often do you reference past sessions?
 
 ---

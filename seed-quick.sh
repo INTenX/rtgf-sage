@@ -4,7 +4,7 @@
 
 set -e
 
-SAGE_ROOT="$(cd "$(dirname "$0")" && pwd)"
+LORE_ROOT="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_PROJECTS="$HOME/.claude/projects"
 TARGET="$HOME/makanui-knowledge"
 
@@ -22,7 +22,7 @@ for project_dir in "$CLAUDE_PROJECTS"/*; do
       if [ -f "$session_file" ]; then
         echo "Importing $(basename "$session_file")..."
 
-        node "$SAGE_ROOT/tools/cli/rcm-import.js" \
+        node "$LORE_ROOT/tools/cli/rcm-import.js" \
           --source "$session_file" \
           --platform claude-code \
           --target "$TARGET" 2>&1 | grep -E "(✓|✗|Error)" || true
@@ -39,7 +39,7 @@ echo
 echo "✅ Imported $total sessions to makanui-knowledge"
 echo
 echo "View them:"
-echo "  cd $SAGE_ROOT/tools/web"
+echo "  cd $LORE_ROOT/tools/web"
 echo "  node server.js $TARGET 3001"
 echo "  # Open http://localhost:3001"
 echo

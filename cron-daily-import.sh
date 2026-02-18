@@ -1,5 +1,5 @@
 #!/bin/bash
-# Daily import cron job for SAGE
+# Daily import cron job for LORE
 # Runs at 2am daily, imports previous day's sessions
 #
 # Installation:
@@ -8,13 +8,13 @@
 
 set -e
 
-SAGE_ROOT="/home/cbasta/rtgf-sage"
+LORE_ROOT="/home/cbasta/rtgf-sage"
 CLAUDE_PROJECTS="$HOME/.claude/projects"
 LOG_FILE="$HOME/logs/sage-import-$(date +%Y-%m-%d).log"
 
 mkdir -p "$HOME/logs"
 
-echo "=== SAGE Daily Import ===" | tee -a "$LOG_FILE"
+echo "=== LORE Daily Import ===" | tee -a "$LOG_FILE"
 echo "Date: $(date)" | tee -a "$LOG_FILE"
 echo | tee -a "$LOG_FILE"
 
@@ -30,7 +30,7 @@ import_recent_sessions() {
   find "$CLAUDE_PROJECTS"/$project_pattern -name "*.jsonl" -type f -mtime -1 2>/dev/null | while read session; do
     echo "  $(basename "$session")" | tee -a "$LOG_FILE"
 
-    node "$SAGE_ROOT/tools/cli/rcm-import.js" \
+    node "$LORE_ROOT/tools/cli/rcm-import.js" \
       --source "$session" \
       --platform claude-code \
       --target "$target_repo" >> "$LOG_FILE" 2>&1

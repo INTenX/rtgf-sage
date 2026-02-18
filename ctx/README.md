@@ -1,10 +1,10 @@
-# RCM - Runtime Context Management
+# CTX - Context Management
 
 **RTGF Module Contract**
 
 ## Purpose
 
-RCM (Runtime Context Management) treats LLM conversations as version-controlled knowledge artifacts. It enables agent-agnostic session archival, cross-platform conversation management, and git-native knowledge flow curation.
+CTX (Context Management) treats LLM conversations as version-controlled knowledge artifacts. It enables agent-agnostic session archival, cross-platform conversation management, and git-native knowledge flow curation.
 
 ## Problem
 
@@ -17,7 +17,7 @@ LLM conversations are scattered across multiple platforms (Claude Code, ChatGPT,
 
 ## Solution
 
-RCM provides:
+CTX provides:
 1. **Agent-agnostic converters** - Transform platform-specific formats to unified canonical YAML (OMF-based)
 2. **Git-native Knowledge Flow** - Sessions flow through states via directory location: hypothesis → codified → validated → promoted
 3. **Multi-client isolation** - Separate git repositories per client (clean access control)
@@ -28,10 +28,10 @@ RCM provides:
 
 ### State-as-Directory Physics
 
-RCM uses RTGF's "State-as-Directory" pattern:
+CTX uses RTGF's "State-as-Directory" pattern:
 
 ```
-rcm/
+ctx/
 ├── archive/                    # Immutable history
 │   ├── raw/                    # Original platform formats
 │   │   ├── claude-code/
@@ -54,7 +54,7 @@ rcm/
 │   ├── chatgpt.yaml
 │   └── gemini.yaml
 │
-└── config.yaml                 # RCM configuration
+└── config.yaml                 # CTX configuration
 ```
 
 ### Canonical Format (Standard Fidelity)
@@ -101,7 +101,7 @@ Sessions progress through states using git operations (`git mv`, never `mv` or `
 
 ```
 1. hypothesis (auto-import)
-   ↓ (manual tagging + rcm-flow promote)
+   ↓ (manual tagging + ctx-flow promote)
 2. codified (structured, tagged)
    ↓ (quality check)
 3. validated (quality_score ≥ 70)
@@ -110,9 +110,9 @@ Sessions progress through states using git operations (`git mv`, never `mv` or `
 ```
 
 **Git commit conventions:**
-- `rcm(import): Import claude-code session 55fc0e3d`
-- `rcm(flow): Codify session 55fc0e3d (hypothesis → codified)`
-- `rcm(promote): Promote session 55fc0e3d to validated`
+- `ctx(import): Import claude-code session 55fc0e3d`
+- `ctx(flow): Codify session 55fc0e3d (hypothesis → codified)`
+- `ctx(promote): Promote session 55fc0e3d to validated`
 
 ## Multi-Client Repository Topology
 
@@ -122,15 +122,15 @@ Sessions progress through states using git operations (`git mv`, never `mv` or `
 /home/cbasta/client-a-knowledge/
   ├── .git/
   ├── config.yaml              # Binds to client-a RTGF
-  └── rcm/                     # RCM module instance
+  └── ctx/                     # CTX module instance
 
 /home/cbasta/client-b-knowledge/
   ├── .git/
-  └── rcm/
+  └── ctx/
 
 /home/cbasta/personal-knowledge/
   ├── .git/
-  └── rcm/                     # Cross-client learnings, tools, methods
+  └── ctx/                     # Cross-client learnings, tools, methods
 ```
 
 Each repository has independent git history, isolated sessions, and separate RAG workspaces.
@@ -141,13 +141,13 @@ Each repository has independent git history, isolated sessions, and separate RAG
 
 ```bash
 # Manual import
-rcm-import \
+ctx-import \
   --source ~/.claude/projects/-home-cbasta/55fc0e3d.jsonl \
   --platform claude-code \
   --target ~/client-a-knowledge/
 
 # Auto-sync (daemon mode)
-rcm-sync \
+ctx-sync \
   --watch ~/.claude/projects/ \
   --platform claude-code \
   --auto-flow hypothesis \
@@ -158,19 +158,19 @@ rcm-sync \
 
 ```bash
 # Promote from hypothesis to codified
-rcm-flow promote \
+ctx-flow promote \
   --session 55fc0e3d \
   --from hypothesis \
   --to codified \
   --tags "openclaw,workflow,multi-client"
 
 # Validate and promote to RAG
-rcm-flow promote \
+ctx-flow promote \
   --session 55fc0e3d \
   --to validated \
   --quality-score 85
 
-rcm-flow promote \
+ctx-flow promote \
   --session 55fc0e3d \
   --to promoted \
   --export markdown
@@ -179,8 +179,8 @@ rcm-flow promote \
 ### Export to Markdown (RAG ingestion)
 
 ```bash
-rcm-export \
-  --input rcm/flows/promoted/*.yaml \
+ctx-export \
+  --input ctx/flows/promoted/*.yaml \
   --format markdown \
   --output /path/to/anythingllm/documents/
 ```
@@ -189,21 +189,21 @@ rcm-export \
 
 ```bash
 # Search by tags
-rcm-search --tags openclaw,workflow
+ctx-search --tags openclaw,workflow
 
 # Search by date
-rcm-search --date-range 2026-02-01:2026-02-10
+ctx-search --date-range 2026-02-01:2026-02-10
 
 # Search by content
-rcm-search --full-text "RTGF framework"
+ctx-search --full-text "RTGF framework"
 
 # Search by state
-rcm-search --flow-state validated
+ctx-search --flow-state validated
 ```
 
 ## RTGF Integration
 
-When deployed to a client RTGF repository, RCM extends config.yaml:
+When deployed to a client RTGF repository, CTX extends config.yaml:
 
 ```yaml
 # Add to existing RTGF config.yaml
@@ -250,8 +250,8 @@ capabilities:
 - ✅ Canonical schema definition (OMF-based)
 - ✅ Claude Code → canonical converter
 - ✅ Canonical → Markdown serializer
-- ✅ rcm-import CLI tool
-- ✅ rcm-export CLI tool
+- ✅ ctx-import CLI tool
+- ✅ ctx-export CLI tool
 - ✅ Directory structure and config
 
 **Phase 1 (Week 2): Multi-Platform**
@@ -259,11 +259,11 @@ capabilities:
 - ⏳ Gemini converter
 
 **Phase 2 (Week 3): Flow Management**
-- ⏳ rcm-flow CLI tool
-- ⏳ rcm-sync auto-import daemon
+- ⏳ ctx-flow CLI tool
+- ⏳ ctx-sync auto-import daemon
 
 **Phase 3 (Week 4): Discovery**
-- ⏳ rcm-search CLI tool
+- ⏳ ctx-search CLI tool
 - ⏳ Session indexing
 
 ## License
@@ -274,4 +274,4 @@ Apache 2.0 (core functionality)
 
 - **AGENTS.md** - AI agent discovery instructions
 - **schemas/canonical-v1.yaml** - Session schema definition
-- **config.yaml** - RCM configuration reference
+- **config.yaml** - CTX configuration reference

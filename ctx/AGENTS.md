@@ -1,40 +1,40 @@
-# RCM - AI Agent Discovery Instructions
+# CTX - AI Agent Discovery Instructions
 
-**Module:** Runtime Context Management (RCM)
+**Module:** Runtime Context Management (CTX)
 **Discovery Path:** Deterministic, non-inferential
 
 ---
 
 ## Purpose
 
-This file provides AI agents (Claude, ChatGPT, Gemini, etc.) with explicit instructions for discovering, importing, managing, and exporting LLM conversation sessions within the RCM framework.
+This file provides AI agents (Claude, ChatGPT, Gemini, etc.) with explicit instructions for discovering, importing, managing, and exporting LLM conversation sessions within the CTX framework.
 
 ---
 
 ## Discovery Protocol
 
-### 1. Determine RCM Root
+### 1. Determine CTX Root
 
 **If working in RTGF-enabled repository:**
 ```bash
-# Check for RCM capability in config.yaml
+# Check for CTX capability in config.yaml
 yq eval '.capabilities.rcm.enabled' config.yaml
 
 # Get knowledge repo path
-RCM_ROOT=$(yq eval '.capabilities.rcm.knowledge_repo' config.yaml)
+CTX_ROOT=$(yq eval '.capabilities.rcm.knowledge_repo' config.yaml)
 ```
 
-**If working in standalone RCM repository:**
+**If working in standalone CTX repository:**
 ```bash
-# Assume current directory is RCM root
-RCM_ROOT=$(pwd)
+# Assume current directory is CTX root
+CTX_ROOT=$(pwd)
 ```
 
-### 2. Validate RCM Structure
+### 2. Validate CTX Structure
 
 Required directory structure:
 ```
-$RCM_ROOT/rcm/
+$CTX_ROOT/ctx/
 ├── archive/
 │   ├── raw/{platform}/
 │   └── canonical/{year}/{month}/
@@ -49,10 +49,10 @@ $RCM_ROOT/rcm/
 
 **Validation command:**
 ```bash
-test -f "$RCM_ROOT/rcm/config.yaml" && \
-test -d "$RCM_ROOT/rcm/archive/canonical" && \
-test -d "$RCM_ROOT/rcm/flows" && \
-echo "RCM structure valid" || echo "RCM not initialized"
+test -f "$CTX_ROOT/ctx/config.yaml" && \
+test -d "$CTX_ROOT/ctx/archive/canonical" && \
+test -d "$CTX_ROOT/ctx/flows" && \
+echo "CTX structure valid" || echo "CTX not initialized"
 ```
 
 ---
@@ -70,19 +70,19 @@ SESSION_FILE=$(find $SESSION_DIR -name "*.jsonl" -type f | head -1)
 
 **Import command:**
 ```bash
-rcm-import \
+ctx-import \
   --source "$SESSION_FILE" \
   --platform claude-code \
-  --target "$RCM_ROOT" \
+  --target "$CTX_ROOT" \
   --fidelity standard
 ```
 
 **What happens:**
-1. Session copied to `rcm/archive/raw/claude-code/{session-id}.jsonl`
+1. Session copied to `ctx/archive/raw/claude-code/{session-id}.jsonl`
 2. Converted to canonical YAML using `tools/adapters/claude-code.js`
-3. Saved to `rcm/archive/canonical/2026/02/{date}_{title}_{short-id}.yaml`
-4. Symlinked to `rcm/flows/hypothesis/` (auto-import state)
-5. Git commit created: `rcm(import): Import claude-code session {session-id}`
+3. Saved to `ctx/archive/canonical/2026/02/{date}_{title}_{short-id}.yaml`
+4. Symlinked to `ctx/flows/hypothesis/` (auto-import state)
+5. Git commit created: `ctx(import): Import claude-code session {session-id}`
 
 ### Import from ChatGPT
 
@@ -92,10 +92,10 @@ rcm-import \
 
 **Import command:**
 ```bash
-rcm-import \
+ctx-import \
   --source ~/Downloads/conversations.json \
   --platform chatgpt \
-  --target "$RCM_ROOT"
+  --target "$CTX_ROOT"
 ```
 
 ### Import from Gemini
@@ -106,10 +106,10 @@ rcm-import \
 
 **Import command:**
 ```bash
-rcm-import \
+ctx-import \
   --source ~/Downloads/gemini-export.json \
   --platform gemini \
-  --target "$RCM_ROOT"
+  --target "$CTX_ROOT"
 ```
 
 ---
@@ -120,36 +120,36 @@ rcm-import \
 
 ```bash
 # List all hypothesis sessions (untagged, auto-imported)
-ls -lh "$RCM_ROOT/rcm/flows/hypothesis/"
+ls -lh "$CTX_ROOT/ctx/flows/hypothesis/"
 
 # List codified sessions (tagged, structured)
-ls -lh "$RCM_ROOT/rcm/flows/codified/"
+ls -lh "$CTX_ROOT/ctx/flows/codified/"
 
 # List validated sessions (quality-checked)
-ls -lh "$RCM_ROOT/rcm/flows/validated/"
+ls -lh "$CTX_ROOT/ctx/flows/validated/"
 
 # List promoted sessions (RAG-indexed)
-ls -lh "$RCM_ROOT/rcm/flows/promoted/"
+ls -lh "$CTX_ROOT/ctx/flows/promoted/"
 ```
 
 ### Search Sessions
 
 ```bash
-# Search by tags (future: rcm-search)
-grep -r "tags:.*openclaw" "$RCM_ROOT/rcm/archive/canonical/"
+# Search by tags (future: ctx-search)
+grep -r "tags:.*openclaw" "$CTX_ROOT/ctx/archive/canonical/"
 
 # Search by date
-find "$RCM_ROOT/rcm/archive/canonical/2026/02/" -name "*.yaml"
+find "$CTX_ROOT/ctx/archive/canonical/2026/02/" -name "*.yaml"
 
 # Search by content
-grep -r "RTGF framework" "$RCM_ROOT/rcm/archive/canonical/"
+grep -r "RTGF framework" "$CTX_ROOT/ctx/archive/canonical/"
 ```
 
 ### Read Session
 
 ```bash
 # Read canonical YAML
-SESSION_FILE="$RCM_ROOT/rcm/flows/hypothesis/2026-02-08_openclaw_55fc0e3d.yaml"
+SESSION_FILE="$CTX_ROOT/ctx/flows/hypothesis/2026-02-08_openclaw_55fc0e3d.yaml"
 cat "$SESSION_FILE"
 
 # Parse session metadata
@@ -167,7 +167,7 @@ yq eval '.messages | length' "$SESSION_FILE"
 
 **hypothesis → codified** (manual tagging)
 ```bash
-rcm-flow promote \
+ctx-flow promote \
   --session 55fc0e3d \
   --from hypothesis \
   --to codified \
@@ -176,7 +176,7 @@ rcm-flow promote \
 
 **codified → validated** (quality check)
 ```bash
-rcm-flow promote \
+ctx-flow promote \
   --session 55fc0e3d \
   --to validated \
   --quality-score 85 \
@@ -185,7 +185,7 @@ rcm-flow promote \
 
 **validated → promoted** (RAG export)
 ```bash
-rcm-flow promote \
+ctx-flow promote \
   --session 55fc0e3d \
   --to promoted \
   --export markdown \
@@ -193,10 +193,10 @@ rcm-flow promote \
 ```
 
 **What happens during promotion:**
-1. `git mv rcm/flows/{from_state}/{session}.yaml rcm/flows/{to_state}/`
+1. `git mv ctx/flows/{from_state}/{session}.yaml ctx/flows/{to_state}/`
 2. Update `session.flow_state.current` in YAML
-3. Git commit: `rcm(flow): Promote session 55fc0e3d ({from} → {to})`
-4. If `--export` flag: run `rcm-export` to generate Markdown
+3. Git commit: `ctx(flow): Promote session 55fc0e3d ({from} → {to})`
+4. If `--export` flag: run `ctx-export` to generate Markdown
 
 ### Manual Flow Operations (Git-native)
 
@@ -204,18 +204,18 @@ rcm-flow promote \
 
 ```bash
 # Move session from hypothesis to codified
-cd "$RCM_ROOT"
+cd "$CTX_ROOT"
 git mv \
-  rcm/flows/hypothesis/2026-02-08_openclaw_55fc0e3d.yaml \
-  rcm/flows/codified/2026-02-08_openclaw_55fc0e3d.yaml
+  ctx/flows/hypothesis/2026-02-08_openclaw_55fc0e3d.yaml \
+  ctx/flows/codified/2026-02-08_openclaw_55fc0e3d.yaml
 
 # Update flow_state in file
 yq eval '.session.flow_state.current = "codified"' -i \
-  rcm/flows/codified/2026-02-08_openclaw_55fc0e3d.yaml
+  ctx/flows/codified/2026-02-08_openclaw_55fc0e3d.yaml
 
 # Commit
-git add rcm/flows/codified/2026-02-08_openclaw_55fc0e3d.yaml
-git commit -m "rcm(flow): Codify session 55fc0e3d (hypothesis → codified)"
+git add ctx/flows/codified/2026-02-08_openclaw_55fc0e3d.yaml
+git commit -m "ctx(flow): Codify session 55fc0e3d (hypothesis → codified)"
 ```
 
 ---
@@ -226,14 +226,14 @@ git commit -m "rcm(flow): Codify session 55fc0e3d (hypothesis → codified)"
 
 ```bash
 # Export single session
-rcm-export \
-  --input "$RCM_ROOT/rcm/flows/promoted/2026-02-08_openclaw_55fc0e3d.yaml" \
+ctx-export \
+  --input "$CTX_ROOT/ctx/flows/promoted/2026-02-08_openclaw_55fc0e3d.yaml" \
   --format markdown \
   --output /path/to/anythingllm/documents/client-a/
 
 # Export all promoted sessions
-rcm-export \
-  --input "$RCM_ROOT/rcm/flows/promoted/*.yaml" \
+ctx-export \
+  --input "$CTX_ROOT/ctx/flows/promoted/*.yaml" \
   --format markdown \
   --output /path/to/anythingllm/documents/client-a/
 ```
@@ -247,10 +247,10 @@ rcm-export \
 ### Export to JSON (API consumption)
 
 ```bash
-rcm-export \
-  --input "$RCM_ROOT/rcm/flows/validated/*.yaml" \
+ctx-export \
+  --input "$CTX_ROOT/ctx/flows/validated/*.yaml" \
   --format json \
-  --output /tmp/rcm-export/
+  --output /tmp/ctx-export/
 ```
 
 ---
@@ -261,29 +261,29 @@ rcm-export \
 
 ```bash
 # Start watcher in background
-rcm-sync \
+ctx-sync \
   --watch ~/.claude/projects/ \
   --platform claude-code \
-  --target "$RCM_ROOT" \
+  --target "$CTX_ROOT" \
   --auto-flow hypothesis \
   --daemon &
 
 # Check daemon status
-ps aux | grep rcm-sync
+ps aux | grep ctx-sync
 
 # Stop daemon
-pkill -f rcm-sync
+pkill -f ctx-sync
 ```
 
 **What auto-sync does:**
 1. Watches `~/.claude/projects/` for new `.jsonl` files
 2. Detects session close events (file modification stops)
-3. Auto-imports to `rcm/archive/raw/` and `rcm/archive/canonical/`
-4. Auto-promotes to `rcm/flows/hypothesis/`
-5. Git commit: `rcm(import): Auto-import claude-code session {session-id}`
+3. Auto-imports to `ctx/archive/raw/` and `ctx/archive/canonical/`
+4. Auto-promotes to `ctx/flows/hypothesis/`
+5. Git commit: `ctx(import): Auto-import claude-code session {session-id}`
 
 **Configuration:**
-Edit `rcm/config.yaml`:
+Edit `ctx/config.yaml`:
 ```yaml
 auto_sync:
   enabled: true
@@ -296,21 +296,21 @@ auto_sync:
 
 ## RIS Assembly (RTGF Integration)
 
-When RCM is deployed within an RTGF project, AI agents should include RCM context in Research Information Synthesis (RIS).
+When CTX is deployed within an RTGF project, AI agents should include CTX context in Research Information Synthesis (RIS).
 
-### Check RCM Capability
+### Check CTX Capability
 
 ```bash
-# Check if RCM is enabled
+# Check if CTX is enabled
 yq eval '.capabilities.rcm.enabled' config.yaml
 ```
 
-### Include RCM in RIS
+### Include CTX in RIS
 
 **Add to RIS document:**
 
 ```markdown
-## Runtime Context (RCM)
+## Runtime Context (CTX)
 
 **Knowledge Repository:** {path from config.yaml}
 
@@ -319,7 +319,7 @@ yq eval '.capabilities.rcm.enabled' config.yaml
 - [Session Title 2] - {tags} - {flow_state}
 
 **Relevant Sessions for Current Task:**
-- Query: rcm-search --tags {current_task_tags}
+- Query: ctx-search --tags {current_task_tags}
 - Found: {N} sessions
 - Most relevant: {session_title} ({session_id})
 
@@ -329,18 +329,18 @@ yq eval '.capabilities.rcm.enabled' config.yaml
 - Promote to: {suggested_state}
 ```
 
-### Query RCM for Task Context
+### Query CTX for Task Context
 
 ```bash
 # Find related sessions before starting work
-rcm-search \
+ctx-search \
   --tags $(basename $PWD) \
   --date-range $(date -d '30 days ago' +%Y-%m-%d):$(date +%Y-%m-%d) \
   --flow-state codified,validated,promoted
 
 # Read top result for context
-SESSION=$(rcm-search --tags openclaw | head -1)
-cat "$RCM_ROOT/rcm/flows/codified/$SESSION"
+SESSION=$(ctx-search --tags openclaw | head -1)
+cat "$CTX_ROOT/ctx/flows/codified/$SESSION"
 ```
 
 ---
@@ -354,10 +354,10 @@ cat "$RCM_ROOT/rcm/flows/codified/$SESSION"
 ```bash
 # Determine client from current path
 case "$PWD" in
-  */client-a/*) RCM_ROOT="/home/cbasta/client-a-knowledge" ;;
-  */client-b/*) RCM_ROOT="/home/cbasta/client-b-knowledge" ;;
-  */client-c/*) RCM_ROOT="/home/cbasta/client-c-knowledge" ;;
-  *) RCM_ROOT="/home/cbasta/personal-knowledge" ;;
+  */client-a/*) CTX_ROOT="/home/cbasta/client-a-knowledge" ;;
+  */client-b/*) CTX_ROOT="/home/cbasta/client-b-knowledge" ;;
+  */client-c/*) CTX_ROOT="/home/cbasta/client-c-knowledge" ;;
+  *) CTX_ROOT="/home/cbasta/personal-knowledge" ;;
 esac
 ```
 
@@ -365,7 +365,7 @@ esac
 
 ```bash
 # Auto-detect target based on working directory
-rcm-import \
+ctx-import \
   --source "$SESSION_FILE" \
   --platform claude-code \
   --auto-detect-target \
@@ -376,7 +376,7 @@ rcm-import \
 
 ```bash
 # Ensure no session cross-contamination
-diff -r ~/client-a-knowledge/rcm/ ~/client-b-knowledge/rcm/
+diff -r ~/client-a-knowledge/ctx/ ~/client-b-knowledge/ctx/
 # Expected: Only directory structure matches, no shared session files
 ```
 
@@ -426,25 +426,25 @@ file "$SESSION_FILE"
 # Expected: JSON Lines data (JSONL) for Claude Code
 
 # Check adapter availability
-ls -l /home/cbasta/rtgf-rcm/tools/adapters/
+ls -l /home/cbasta/rtgf-ctx/tools/adapters/
 
 # Verbose import
-rcm-import --source "$SESSION_FILE" --platform claude-code --verbose
+ctx-import --source "$SESSION_FILE" --platform claude-code --verbose
 ```
 
 ### Git Conflicts
 
 ```bash
 # If git mv fails due to uncommitted changes
-cd "$RCM_ROOT"
+cd "$CTX_ROOT"
 git status
 
 # Commit pending changes first
-git add rcm/flows/
-git commit -m "rcm(flow): Checkpoint before promotion"
+git add ctx/flows/
+git commit -m "ctx(flow): Checkpoint before promotion"
 
 # Retry flow operation
-rcm-flow promote --session 55fc0e3d --to codified
+ctx-flow promote --session 55fc0e3d --to codified
 ```
 
 ### Missing Dependencies
@@ -455,11 +455,11 @@ node --version
 # Required: ≥18.0.0
 
 # Reinstall dependencies
-cd /home/cbasta/rtgf-rcm/
+cd /home/cbasta/rtgf-ctx/
 npm install
 
 # Verify CLI tools
-which rcm-import rcm-export rcm-flow
+which ctx-import ctx-export ctx-flow
 ```
 
 ---
@@ -468,43 +468,43 @@ which rcm-import rcm-export rcm-flow
 
 ```bash
 # Import session
-rcm-import --source {file} --platform {platform} --target {rcm_root}
+ctx-import --source {file} --platform {platform} --target {rcm_root}
 
 # Export to Markdown
-rcm-export --input {yaml_files} --format markdown --output {dir}
+ctx-export --input {yaml_files} --format markdown --output {dir}
 
 # Promote through flow
-rcm-flow promote --session {id} --to {state} --tags {tags}
+ctx-flow promote --session {id} --to {state} --tags {tags}
 
 # Search sessions
-rcm-search --tags {tags} --date-range {start}:{end} --flow-state {state}
+ctx-search --tags {tags} --date-range {start}:{end} --flow-state {state}
 
 # Auto-sync daemon
-rcm-sync --watch {dir} --platform {platform} --daemon
+ctx-sync --watch {dir} --platform {platform} --daemon
 
 # List sessions by state
-ls -lh $RCM_ROOT/rcm/flows/{hypothesis|codified|validated|promoted}/
+ls -lh $CTX_ROOT/ctx/flows/{hypothesis|codified|validated|promoted}/
 
 # Read session
-cat $RCM_ROOT/rcm/flows/{state}/{session-file}.yaml
+cat $CTX_ROOT/ctx/flows/{state}/{session-file}.yaml
 ```
 
 ---
 
 ## Next Steps
 
-After mastering basic RCM operations:
+After mastering basic CTX operations:
 
-1. **Enable auto-sync** - Set up `rcm-sync` daemon for zero-toil archival
+1. **Enable auto-sync** - Set up `ctx-sync` daemon for zero-toil archival
 2. **Curate hypothesis sessions** - Review auto-imported sessions, promote valuable ones
 3. **Build RAG knowledge base** - Export promoted sessions to AnythingLLM
 4. **Multi-platform import** - Start importing ChatGPT and Gemini sessions
-5. **Search & discovery** - Use `rcm-search` to find relevant past context
+5. **Search & discovery** - Use `ctx-search` to find relevant past context
 
 ---
 
 ## See Also
 
-- **README.md** - RCM module contract and architecture
+- **README.md** - CTX module contract and architecture
 - **schemas/canonical-v1.yaml** - Session schema definition
-- **config.yaml** - RCM configuration reference
+- **config.yaml** - CTX configuration reference

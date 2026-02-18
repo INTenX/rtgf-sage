@@ -124,7 +124,7 @@ node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
 # Read the full session
 cat /home/cbasta/intenx-knowledge/rcm/archive/canonical/2026/02/session_abc123.yaml
 
-# Or use SAGE tools to read it
+# Or use LORE tools to read it
 node /home/cbasta/rtgf-sage/tools/cli/rcm-export.js \
   --input /home/cbasta/intenx-knowledge/rcm/archive/canonical/2026/02/session_abc123.yaml \
   --format markdown \
@@ -192,7 +192,7 @@ node /home/cbasta/rtgf-sage/tools/cli/rcm-merge-indexes.js \
 **On SensitDev WSL:**
 
 ```bash
-# Clone SAGE tools repo
+# Clone LORE tools repo
 cd /home/cbasta
 git clone https://github.com/cbasta-intenx/rtgf-sage.git
 
@@ -251,7 +251,7 @@ node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
 
 **Result:**
 ```
-abc12345 | SAGE Implementation Session
+abc12345 | LORE Implementation Session
    test-knowledge | hypothesis | 2026-02-14
 
 def67890 | Sensit Hardware Design v2
