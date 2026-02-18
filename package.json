@@ -1,10 +1,12 @@
 {
-  "name": "rtgf-sage",
+  "name": "rtgf-lore",
   "version": "0.1.0",
-  "description": "SAGE - Session Archive & Governance Engine. Git-native LLM conversation archival for RTGF framework",
+  "description": "LORE - Library Of Refined Evidence. Git-native LLM conversation archival for RTGF framework",
   "type": "module",
   "main": "index.js",
   "bin": {
+    "ctx-import": "./tools/cli/rcm-import.js",
+    "ctx-export": "./tools/cli/rcm-export.js",
     "rcm-import": "./tools/cli/rcm-import.js",
     "rcm-export": "./tools/cli/rcm-export.js"
   },
@@ -19,7 +21,8 @@
     "session-archival",
     "git-native",
     "rtgf",
-    "sage",
+    "lore",
+    "ctx",
     "claude",
     "chatgpt",
     "gemini"

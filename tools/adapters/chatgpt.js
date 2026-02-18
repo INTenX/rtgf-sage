@@ -3,7 +3,7 @@
 /**
  * ChatGPT (OpenAI) → Canonical YAML Converter
  *
- * Converts ChatGPT official export format (conversations.json) to SAGE canonical format.
+ * Converts ChatGPT official export format (conversations.json) to LORE canonical format.
  *
  * Input: OpenAI conversations.json export file
  * Output: Canonical YAML files in target directory

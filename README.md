@@ -1,4 +1,4 @@
-# SAGE - Session Archive & Governance Engine
+# LORE - Library Of Refined Evidence
 
 **Git-Native LLM Conversation Management for RTGF**
 
@@ -11,7 +11,7 @@ Status: Production-Ready
 
 ## Overview
 
-SAGE treats LLM conversations as version-controlled knowledge artifacts. Built on the RCM (Runtime Context Management) module, it provides agent-agnostic session archival, cross-platform conversation management, and git-native knowledge flow curation.
+LORE treats LLM conversations as version-controlled knowledge artifacts. Built on the CTX (Context Management) module, it provides agent-agnostic session archival, cross-platform conversation management, and git-native knowledge flow curation.
 
 **Problem:** LLM conversations scattered across platforms (Claude Code, ChatGPT, Gemini) with no unified archival, versioning, or reuse strategy.
 
@@ -24,8 +24,8 @@ SAGE treats LLM conversations as version-controlled knowledge artifacts. Built o
 ### Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/rtgf-sage.git
-cd rtgf-sage
+git clone https://github.com/INTenX/rtgf-ai-stack.git
+cd rtgf-ai-stack/lore
 npm install
 npm link  # Make CLI tools globally available
 ```
@@ -33,7 +33,7 @@ npm link  # Make CLI tools globally available
 ### Import a Claude Code Session
 
 ```bash
-rcm-import \
+ctx-import \
   --source ~/.claude/projects/-home-cbasta/82138824-9656-40df-83f6-3a673429971a.jsonl \
   --platform claude-code \
   --target ~/personal-knowledge/
@@ -42,8 +42,8 @@ rcm-import \
 ### Export to Markdown (RAG-ready)
 
 ```bash
-rcm-export \
-  --input ~/personal-knowledge/rcm/flows/promoted/*.yaml \
+ctx-export \
+  --input ~/personal-knowledge/ctx/flows/promoted/*.yaml \
   --format markdown \
   --output /path/to/anythingllm/documents/
 ```
@@ -53,8 +53,8 @@ rcm-export \
 ## Architecture
 
 ```
-rtgf-rcm/
-├── rcm/                           # RTGF module
+lore/
+├── ctx/                           # CTX RTGF module (Context Management)
 │   ├── README.md                  # Module contract
 │   ├── AGENTS.md                  # AI agent discovery
 │   ├── config.yaml                # Configuration
@@ -74,8 +74,8 @@ rtgf-rcm/
     ├── serializers/
     │   └── markdown.js            # Export formats
     └── cli/
-        ├── rcm-import.js          # Import sessions
-        └── rcm-export.js          # Export sessions
+        ├── rcm-import.js          # Import sessions (ctx-import)
+        └── rcm-export.js          # Export sessions (ctx-export)
 ```
 
 ---
@@ -130,7 +130,7 @@ Sessions progress through states using git operations:
 
 ```
 1. hypothesis (auto-import, untagged)
-   ↓ rcm-flow promote --to codified
+   ↓ ctx-flow promote --to codified
 2. codified (tagged, structured)
    ↓ quality check
 3. validated (quality_score ≥ 70)
@@ -139,9 +139,9 @@ Sessions progress through states using git operations:
 ```
 
 **Git commit conventions:**
-- `rcm(import): Import claude-code session 55fc0e3d`
-- `rcm(flow): Codify session 55fc0e3d (hypothesis → codified)`
-- `rcm(promote): Promote session 55fc0e3d to validated`
+- `ctx(import): Import claude-code session 55fc0e3d`
+- `ctx(flow): Codify session 55fc0e3d (hypothesis → codified)`
+- `ctx(promote): Promote session 55fc0e3d to validated`
 
 ---
 
@@ -152,15 +152,15 @@ Separate git repositories per client:
 ```
 /home/cbasta/client-a-knowledge/
   ├── .git/
-  └── rcm/
+  └── ctx/
 
 /home/cbasta/client-b-knowledge/
   ├── .git/
-  └── rcm/
+  └── ctx/
 
 /home/cbasta/personal-knowledge/
   ├── .git/
-  └── rcm/
+  └── ctx/
 ```
 
 Each repo has independent git history and isolated sessions.
@@ -179,12 +179,12 @@ Each repo has independent git history and isolated sessions.
 
 ## CLI Tools
 
-### rcm-import
+### ctx-import
 
-Import sessions to RCM:
+Import sessions to CTX:
 
 ```bash
-rcm-import \
+ctx-import \
   --source session.jsonl \
   --platform claude-code \
   --target ~/knowledge/ \
@@ -195,18 +195,18 @@ rcm-import \
 **Options:**
 - `--source`: Source session file
 - `--platform`: Platform name (claude-code, chatgpt, gemini)
-- `--target`: RCM root directory
+- `--target`: CTX root directory
 - `--flow-state`: Initial state (default: hypothesis)
 - `--tags`: Comma-separated tags
 - `--no-commit`: Skip git commit
 
-### rcm-export
+### ctx-export
 
 Export sessions to various formats:
 
 ```bash
-rcm-export \
-  --input "rcm/flows/promoted/*.yaml" \
+ctx-export \
+  --input "ctx/flows/promoted/*.yaml" \
   --format markdown \
   --output /path/to/export/
 ```
@@ -215,31 +215,31 @@ rcm-export \
 - `--input`: File path or glob pattern
 - `--format`: Output format (markdown, json)
 - `--output`: Output directory
-- `--rcm-root`: RCM root (for relative paths)
+- `--ctx-root`: CTX root (for relative paths)
 
 ---
 
 ## Development Status
 
-**Phase 0 (Week 1): MVP** ✅ In Progress
+**Phase 0 (MVP)** ✅ Complete
 - ✅ Project structure and dependencies
 - ✅ Canonical schema (OMF-based)
 - ✅ Claude Code adapter
 - ✅ Markdown serializer
-- ✅ rcm-import CLI
-- ✅ rcm-export CLI
-- ⏳ Testing with existing sessions
+- ✅ ctx-import CLI
+- ✅ ctx-export CLI
+- ✅ 100+ sessions imported across production knowledge repos
 
-**Phase 1 (Week 2): Multi-Platform**
+**Phase 1: Multi-Platform**
 - ⏳ ChatGPT adapter
 - ⏳ Gemini adapter
 
-**Phase 2 (Week 3): Flow Management**
-- ⏳ rcm-flow CLI
-- ⏳ rcm-sync auto-import daemon
+**Phase 2: Flow Management** ✅ Complete
+- ✅ ctx-flow CLI
+- ✅ ctx-sync auto-import daemon
 
-**Phase 3 (Week 4): Discovery**
-- ⏳ rcm-search CLI
+**Phase 3: Discovery**
+- ⏳ ctx-search CLI
 - ⏳ Session indexing
 
 ---
@@ -275,32 +275,32 @@ rcm-export \
 
 ```bash
 # Import existing Claude Code session
-rcm-import \
+ctx-import \
   --source ~/.claude/projects/-home-cbasta/82138824-9656-40df-83f6-3a673429971a.jsonl \
   --platform claude-code \
   --target ~/personal-knowledge/
 
 # Verify canonical created
-ls ~/personal-knowledge/rcm/archive/canonical/2026/*/
+ls ~/personal-knowledge/ctx/archive/canonical/2026/*/
 
 # Export to Markdown
-rcm-export \
-  --input ~/personal-knowledge/rcm/flows/hypothesis/*.yaml \
+ctx-export \
+  --input ~/personal-knowledge/ctx/flows/hypothesis/*.yaml \
   --format markdown \
-  --output /tmp/rcm-test-export/
+  --output /tmp/ctx-test-export/
 
 # Verify readable Markdown
-cat /tmp/rcm-test-export/*.md
+cat /tmp/ctx-test-export/*.md
 ```
 
 ---
 
 ## Documentation
 
-- **rcm/README.md** - Module contract and architecture
-- **rcm/AGENTS.md** - AI agent discovery instructions
-- **rcm/schemas/canonical-v1.yaml** - Session schema reference
-- **rcm/config.yaml** - Configuration reference
+- **ctx/README.md** - Module contract and architecture
+- **ctx/AGENTS.md** - AI agent discovery instructions
+- **ctx/schemas/canonical-v1.yaml** - Session schema reference
+- **ctx/config.yaml** - Configuration reference
 
 ---
 

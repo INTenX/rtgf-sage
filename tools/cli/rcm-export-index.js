@@ -32,7 +32,7 @@ program
 const options = program.opts();
 
 async function exportIndex() {
-  console.log('🔍 SAGE Session Index Export');
+  console.log('🔍 LORE Session Index Export');
   console.log('=============================\n');
 
   // Pull repos first (unless --no-pull)

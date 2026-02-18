@@ -3,7 +3,7 @@
 /**
  * Gemini (Google) → Canonical YAML Converter
  *
- * Converts Google Gemini/Bard export (Google Takeout) to SAGE canonical format.
+ * Converts Google Gemini/Bard export (Google Takeout) to LORE canonical format.
  *
  * Input: Saved Gemini Activity.json from Google Takeout
  * Output: Canonical YAML files in target directory

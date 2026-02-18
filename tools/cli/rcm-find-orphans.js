@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * rcm-find-orphans - Find Claude Code sessions not yet imported to SAGE
+ * rcm-find-orphans - Find Claude Code sessions not yet imported to LORE
  *
  * Scans ~/.claude/projects/ and compares against imported sessions
  * to identify orphaned sessions that need importing
@@ -28,7 +28,7 @@ program
 const options = program.opts();
 
 async function findOrphans() {
-  console.log('🔍 SAGE Orphan Session Finder');
+  console.log('🔍 LORE Orphan Session Finder');
   console.log('==============================\n');
 
   const repoName = path.basename(options.target);
