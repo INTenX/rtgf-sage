@@ -63,6 +63,13 @@ model_list:
       model: ollama/gemma2:2b
       api_base: "os.environ/OLLAMA_API_BASE"
 
+  # Reasoning model — chain-of-thought, math, planning, multi-step problems
+  # Distilled from DeepSeek-R1 671B. Different capability class from chat/coding models.
+  - model_name: deepseek-r1:14b
+    litellm_params:
+      model: ollama/deepseek-r1:14b
+      api_base: "os.environ/OLLAMA_API_BASE"
+
   # ── Aliases — Stable Names for Application Code ─────────────────────────────
   # Use these in application code instead of exact model names.
   # Swap the underlying model without changing application code.
@@ -90,6 +97,11 @@ model_list:
   - model_name: local-compact        # Compact capable model
     litellm_params:
       model: ollama/phi4-mini
+      api_base: "os.environ/OLLAMA_API_BASE"
+
+  - model_name: local-reasoning      # Chain-of-thought reasoning (math, planning, logic)
+    litellm_params:
+      model: ollama/deepseek-r1:14b
       api_base: "os.environ/OLLAMA_API_BASE"
 
   # ── Anthropic Claude ─────────────────────────────────────────────────────────
@@ -130,6 +142,11 @@ model_list:
   # Used in fallback routing for local-* aliases when Ollama is unavailable.
   # Named with "-fallback" suffix so they don't appear as primary options.
 
+  - model_name: cloud-reasoning-fallback
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+
   - model_name: cloud-coding-fallback
     litellm_params:
       model: anthropic/claude-sonnet-4-6
@@ -153,6 +170,7 @@ router_settings:
     - local-general: ["cloud-general-fallback"]
     - local-fast: ["cloud-general-fallback"]
     - local-compact: ["cloud-general-fallback"]
+    - local-reasoning: ["cloud-reasoning-fallback"]
 
   # How long to wait before trying fallback (seconds)
   timeout: 30
