@@ -82,6 +82,66 @@ rtgf-ai-stack/
 - **Knowledge repos deployed:** 7 (1 public tools, 6 private per-client)
 - **Daily import cron:** Not yet enabled; set up when ready to populate
 
+### 📬 Incident — WSL/Docker Runaway (2026-02-18)
+
+**What happened:** LibreChat Docker containers configured with `restart: always` entered a restart storm. No `.wslconfig` memory cap meant no blast radius control. Positive feedback loop made the entire machine unusable.
+
+**Root causes:**
+1. `restart: always` restart policy — aggressive, no backoff, no circuit breaker
+2. Missing `.wslconfig` memory cap — no hard limit on WSL resource consumption
+3. No proactive detection tooling — discovered post-incident, not pre-empted
+
+**Resolution:** Addressed (machine recovered). Proactive tooling planned — see `wsl-audit` below.
+
+**Governance implication:** Platform-level health monitoring is a **prerequisite** to running AI services, not an afterthought. Observability order: platform health → application observability (Opcode) → full OTel.
+
+---
+
+### wsl-audit Tool — Implementation Planned ⬜
+
+**Purpose:** Proactive detection of WSL/Docker runaway conditions. CLI tool, on-demand.
+
+**Location:** `~/.local/bin/wsl-audit` (single bash script ~500-600 lines). Also document/version in `rtgf-ai-stack/scripts/`.
+
+**Subcommands:**
+```
+wsl-audit status     — WSL overview (distros, memory, processes, .wslconfig)
+wsl-audit docker     — Container health (states, restart loops, policies)
+wsl-audit processes  — Windows-side WSL/Docker process audit with distro mapping
+wsl-audit compose    — Compose file linter (risky patterns, missing env vars)
+wsl-audit risks      — Proactive risk detection (auto-start, missing caps, stale containers)
+wsl-audit all        — Run all checks
+wsl-audit watch [N]  — Re-run all checks every N seconds (default 30)
+```
+
+**Key technical details:**
+- No external deps — uses docker CLI `--format` templates, not jq
+- Windows-side access via `powershell.exe -NoProfile -Command '...'` from WSL
+- WSL CLI outputs UTF-16 — strip null bytes with `tr -d '\0'`
+- ANSI color with auto-detection for non-TTY (piping)
+- Graceful degradation — each check handles missing docker/powershell
+
+**Critical flags to detect:**
+- `restart: always` policy → WARN in compose linter
+- RestartCount > 3 → WARN
+- No `.wslconfig` or no memory cap → CRIT
+- Memory usage > 80% → WARN
+- Docker Desktop auto-start in Windows registry → WARN
+- Orphaned processes (parent PID no longer exists) → flag
+
+**Verification:**
+1. `wsl-audit all` — all sections produce output
+2. `wsl-audit compose /home/cbasta/LibreChat/` — flags `user: "${UID}:${GID}"` pattern
+3. `wsl-audit watch 10` — refreshes, Ctrl+C exits cleanly
+4. Stop a container, re-run `wsl-audit docker` — flags the exit
+
+**Mandatory governance artifacts (INTenX WSL instances):**
+- `.wslconfig` with memory cap = required before running AI services
+- No `restart: always` without `restart_policy.max_attempts` limit
+- Run `wsl-audit compose` before starting any new Docker service
+
+---
+
 ### Observability — Opcode First ⬜ (Decision 2026-02-18)
 - **Decision:** Opcode first, OTel+Grafana later. Don't over-build for current operational tempo.
 - **Action needed:** Install and configure Opcode (auto-detects `~/.claude/projects/`)
@@ -121,7 +181,7 @@ All open decisions resolved by Control Center. See decisions table at top of thi
 ---
 
 ## Prior Work Reference
-- Full LORE development history: `~/rtgf-sage/SESSION_CONTEXT_2026-02-11.md`
-- CTX module operations detail: `~/rtgf-sage/ctx/AGENTS.md`
+- Full LORE development history: `~/rtgf-ai-stack/lore/SESSION_CONTEXT_2026-02-11.md`
+- CTX module operations detail: `~/rtgf-ai-stack/lore/ctx/AGENTS.md`
 - Governance research (tool landscape, RAG options): `~/rtgf/RTGF-Governance-Research-2026-02-17.md`
 - Trademark research (SAGE rename required): `~/rtgf/RTGF-Trademark-Research-2026-02-18.md`

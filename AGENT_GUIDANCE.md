@@ -24,7 +24,7 @@ This session owns the **product development stack** — the shared infrastructur
 ### Git Workflow
 - Conventional commits (feat:, fix:, docs:, refactor:, chore:)
 - Feature branches for significant changes
-- Co-authored commits: `Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>`
+- Co-authored commits: `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
 - Git identity: `cole.basta@makanuienterprises.com`
 
 ### Connecting to Services
@@ -44,7 +44,7 @@ source /mnt/c/Temp/wsl-shared/ollama-setup.sh --bashrc
 # Aliases available: ollama-status, ollama-models, ollama-start
 ```
 
-**LibreChat (web UI + knowledge base — evaluation status, see Session Context):**
+**LibreChat (web UI — keep + decouple, see Session Context):**
 ```bash
 # LibreChat runs on Ubuntu-AI-Hub WSL
 # UI: http://localhost:3080 (from Ubuntu-AI-Hub) or http://<hub-ip>:3080 (other WSL)
@@ -57,17 +57,21 @@ source /mnt/c/Temp/wsl-shared/ollama-setup.sh --bashrc
 ### Session Archival Tools (LORE)
 ```bash
 # Import a Claude Code session to knowledge repo
-node ~/rtgf-sage/tools/cli/rcm-import.js \
+node ~/rtgf-ai-stack/lore/tools/cli/rcm-import.js \
   --source ~/.claude/projects/-home-cbasta/SESSION_ID.jsonl \
   --platform claude-code \
   --target /home/cbasta/intenx-knowledge/
 
 # Browse sessions (web dashboard)
-node ~/rtgf-sage/tools/web/server.js /home/cbasta/intenx-knowledge/ 3000
+node ~/rtgf-ai-stack/lore/tools/web/server.js /home/cbasta/intenx-knowledge/ 3000
 
 # Promote session through knowledge flow states
-node ~/rtgf-sage/tools/cli/rcm-flow.js promote \
+node ~/rtgf-ai-stack/lore/tools/cli/rcm-flow.js promote \
   --session SESSION_ID --to codified --tags "topic,discipline"
+
+# Find orphaned sessions not yet imported
+node ~/rtgf-ai-stack/lore/tools/cli/rcm-find-orphans.js \
+  --target /home/cbasta/intenx-knowledge/ --import
 ```
 
 **Knowledge flow states:** `hypothesis → codified → validated → promoted`
@@ -85,31 +89,34 @@ node ~/rtgf-sage/tools/cli/rcm-flow.js promote \
 
 ### Knowledge Base / RAG Layer
 - **Current:** LibreChat + RAG API (pgvector) + MeiliSearch — installed on Ubuntu-AI-Hub
-- **Components:** LibreChat (UI + API), MongoDB (conversation storage), MeiliSearch (full-text search), RAG API (vector embeddings), pgvector (vector DB)
-- **Status:** Installed, evaluation in progress — see Session Context for decision
+- **Decision:** Keep + decouple. Route RAG through LiteLLM. No deep LibreChat integrations.
+- **Status:** Production — do not build against LibreChat RAG API directly
 
-### Session Archival Layer
-- **Tools:** `~/rtgf-sage/tools/` — CLI, TUI, web dashboard; adapters for Claude Code (working), ChatGPT/Gemini (pending)
-- **Knowledge repos:** 6 private per-client repos deployed on GitHub
-- **Status:** Production-ready for Claude Code; 23 test sessions validated
+### Session Archival Layer (LORE)
+- **Tools:** `~/rtgf-ai-stack/lore/tools/` — CLI, TUI, web dashboard
+- **Adapters:** Claude Code (working), ChatGPT/Gemini (pending)
+- **Knowledge repos:** 6 private per-client repos deployed on GitHub (INTenX org)
+- **Status:** Production-ready for Claude Code; 100+ sessions imported
 
-### Observability Layer (planned)
-- **Candidates:** Opcode (session browsing, auto-detects `~/.claude/projects/`), OTel + Grafana (real-time cross-WSL dashboards)
-- **Status:** Not yet implemented; Opcode recommended for session discovery, OTel+Grafana for real-time monitoring
+### Observability Layer
+- **Decision:** Opcode first, OTel+Grafana later
+- **Config:** `~/rtgf-ai-stack/observability/`
+- **Status:** Not yet implemented
 
-### AI Gateway / Cost Governance (planned)
-- **Candidate:** LiteLLM — open source, per-user/team budget limits, routes across 100+ LLMs; ThoughtWorks Tech Radar Vol. 33 Adopt
-- **Status:** Not yet implemented; evaluate as the routing layer between agents and both Ollama + cloud models
+### AI Gateway / Cost Governance
+- **Decision:** LiteLLM — implement now (priority)
+- **Config:** `~/rtgf-ai-stack/gateway/`
+- **Status:** Not yet implemented
 
 ---
 
 ## Escalation Points (to Control Center)
 
-- Major stack decisions (replace LibreChat, add LiteLLM gateway, observability platform choice)
+- Major stack decisions (replace LibreChat, observability platform choice)
 - Budget and cost governance policy decisions
 - Cross-client infrastructure changes (affects all WSL instances)
 - New WSL instance setup or service deployment
-- Capability module naming decisions — locked: SAGE→LORE, RCM→CTX, ISC/AIRC→RELAY (see Session Context)
+- Locked names: SAGE→LORE, RCM→CTX, ISC/AIRC→RELAY
 
 ---
 
@@ -127,7 +134,7 @@ node ~/rtgf-sage/tools/cli/rcm-flow.js promote \
 - Cross-client coordination
 
 **User handles:**
-- Strategic tool choices (keep/replace LibreChat, etc.)
+- Strategic tool choices
 - New service procurement or licensing
 
 ---
@@ -136,7 +143,7 @@ node ~/rtgf-sage/tools/cli/rcm-flow.js promote \
 
 - Shared services context: `/mnt/c/Temp/wsl-shared/CONTEXT.md`
 - Ollama setup script: `/mnt/c/Temp/wsl-shared/ollama-setup.sh`
-- Session context (current state, open decisions): `~/rtgf-sage/STACK-SESSION-CONTEXT.md`
+- Session context (current state, decisions): `~/rtgf-ai-stack/STACK-SESSION-CONTEXT.md`
 - Control Center memory: `~/.claude/projects/-home-cbasta/memory/MEMORY.md`
-- RTGF governance research (tool landscape per dimension): `~/rtgf/RTGF-Governance-Research-2026-02-17.md`
-- Archival tools detail: `~/rtgf-sage/rcm/AGENTS.md`
+- RTGF governance research: `~/rtgf/RTGF-Governance-Research-2026-02-17.md`
+- CTX module operations: `~/rtgf-ai-stack/lore/ctx/AGENTS.md`

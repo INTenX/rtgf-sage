@@ -20,8 +20,8 @@ ColeWork WSL        SensitDev WSL        (Other WSL instances)
 
 **Key Files:**
 - `/home/cbasta/sage-exports/session-index.json` - Consolidated session index
-- `/home/cbasta/rtgf-sage/tools/cli/rcm-export-index.js` - Index generator
-- `/home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js` - Query tool
+- `/home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-export-index.js` - Index generator
+- `/home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js` - Query tool
 
 ---
 
@@ -31,15 +31,15 @@ ColeWork WSL        SensitDev WSL        (Other WSL instances)
 
 ```bash
 # Find sessions about "kicad automation"
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --search "kicad automation"
 
 # Find sessions by tag
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --tags "business-strategy,tfaas"
 
 # Find recent sessions
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --recent 10
 ```
 
@@ -47,19 +47,19 @@ node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
 
 ```bash
 # INTenX sessions only
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --repo intenx-knowledge
 
 # Sensit sessions only
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --repo sensit-knowledge
 
 # Sessions from ColeWork WSL
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --wsl ColeWork
 
 # Sessions from SensitDev WSL
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --wsl SensitDev
 ```
 
@@ -67,15 +67,15 @@ node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
 
 ```bash
 # Only codified sessions (curated, tagged)
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --state codified
 
 # Only Claude Code sessions
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --platform claude-code
 
 # Promoted sessions (RAG-ready)
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --state promoted
 ```
 
@@ -83,13 +83,13 @@ node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
 
 ```bash
 # INTenX business strategy sessions from last week
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --repo intenx-knowledge \
   --tags "business-strategy" \
   --recent 20
 
 # Sensit sessions from SensitDev WSL
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --repo sensit-knowledge \
   --wsl SensitDev
 ```
@@ -98,15 +98,15 @@ node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
 
 ```bash
 # Table (default, human-readable)
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js --search "kicad"
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js --search "kicad"
 
 # JSON (for programmatic use)
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --search "kicad" \
   --format json
 
 # Simple list (compact)
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --search "kicad" \
   --format list
 ```
@@ -125,7 +125,7 @@ node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
 cat /home/cbasta/intenx-knowledge/rcm/archive/canonical/2026/02/session_abc123.yaml
 
 # Or use LORE tools to read it
-node /home/cbasta/rtgf-sage/tools/cli/rcm-export.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-export.js \
   --input /home/cbasta/intenx-knowledge/rcm/archive/canonical/2026/02/session_abc123.yaml \
   --format markdown \
   --output /tmp/session-export.md
@@ -141,7 +141,7 @@ cat /tmp/session-export.md
 
 ```bash
 # Export sessions from ColeWork repos
-node /home/cbasta/rtgf-sage/tools/cli/rcm-export-index.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-export-index.js \
   --wsl ColeWork \
   --output /home/cbasta/sage-exports/session-index-colework.json
 ```
@@ -153,7 +153,7 @@ node /home/cbasta/rtgf-sage/tools/cli/rcm-export-index.js \
 wsl -d SensitDev
 
 # Export sessions from SensitDev repos
-node /home/cbasta/rtgf-sage/tools/cli/rcm-export-index.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-export-index.js \
   --wsl SensitDev \
   --repos /home/cbasta/sensit-knowledge \
   --output /home/cbasta/sage-exports/session-index-sensitdev.json
@@ -163,7 +163,7 @@ node /home/cbasta/rtgf-sage/tools/cli/rcm-export-index.js \
 
 ```bash
 # Merge both indexes into one
-node /home/cbasta/rtgf-sage/tools/cli/rcm-merge-indexes.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-merge-indexes.js \
   --inputs /home/cbasta/sage-exports/session-index-*.json \
   --output /home/cbasta/sage-exports/session-index.json
 ```
@@ -199,7 +199,7 @@ git clone https://github.com/cbasta-intenx/rtgf-sage.git
 # Import Sensit sessions
 for session in ~/.claude/projects/-*/*.jsonl; do
   if [ -f "$session" ]; then
-    node /home/cbasta/rtgf-sage/tools/cli/rcm-import.js \
+    node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-import.js \
       --source "$session" \
       --platform claude-code \
       --target /home/cbasta/sensit-knowledge
@@ -207,7 +207,7 @@ for session in ~/.claude/projects/-*/*.jsonl; do
 done
 
 # Export index
-node /home/cbasta/rtgf-sage/tools/cli/rcm-export-index.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-export-index.js \
   --wsl SensitDev \
   --repos /home/cbasta/sensit-knowledge \
   --output /mnt/c/sage-exports/session-index-sensitdev.json
@@ -223,11 +223,11 @@ cp /mnt/c/sage-exports/session-index-sensitdev.json /home/cbasta/sage-exports/
 
 # Merge indexes (tool to be created)
 # For now, query both separately:
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --index /home/cbasta/sage-exports/session-index-colework.json \
   --search "sensit"
 
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --index /home/cbasta/sage-exports/session-index-sensitdev.json \
   --search "hardware"
 ```
@@ -244,7 +244,7 @@ Create cron jobs on both WSL instances to export indexes nightly.
 
 ```bash
 # Show most recent sessions across all WSL instances
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --recent 10 \
   --format list
 ```
@@ -264,7 +264,7 @@ ghi11213 | KiCad Automation Tools
 ### Use Case 2: "Find all Sensit-related work"
 
 ```bash
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --search "sensit" \
   --format table
 ```
@@ -274,7 +274,7 @@ node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
 ### Use Case 3: "What business strategy sessions exist?"
 
 ```bash
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --tags "business-strategy" \
   --repo intenx-knowledge
 ```
@@ -284,7 +284,7 @@ node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
 ### Use Case 4: "What's the latest codified knowledge?"
 
 ```bash
-node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-query-sessions.js \
   --state codified \
   --recent 20
 ```
@@ -344,7 +344,7 @@ node /home/cbasta/rtgf-sage/tools/cli/rcm-query-sessions.js \
 
 **Run:**
 ```bash
-node /home/cbasta/rtgf-sage/tools/cli/rcm-export-index.js --wsl ColeWork
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-export-index.js --wsl ColeWork
 ```
 
 ### "No sessions from SensitDev"
@@ -359,7 +359,7 @@ node /home/cbasta/rtgf-sage/tools/cli/rcm-export-index.js --wsl ColeWork
 **Verify index is up-to-date:**
 ```bash
 # Re-export index
-node /home/cbasta/rtgf-sage/tools/cli/rcm-export-index.js --wsl ColeWork
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-export-index.js --wsl ColeWork
 
 # Check last updated time
 head -5 /home/cbasta/sage-exports/session-index.json

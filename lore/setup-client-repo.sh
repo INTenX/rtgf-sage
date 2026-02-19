@@ -137,7 +137,7 @@ rcm-flow promote --session SESSION_ID --to promoted
 rcm-tui $(pwd)
 
 # Web Dashboard
-cd /path/to/rtgf-sage/tools/web
+cd /path/to/rtgf-ai-stack/lore/tools/web
 node server.js $(pwd) 3000
 # Open http://localhost:3000
 \`\`\`

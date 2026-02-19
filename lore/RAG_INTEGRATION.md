@@ -99,7 +99,7 @@ mkdir -p ~/.anythingllm/documents/makanui/sage-2026-q1
 
 ```bash
 # 1. Export INTenX promoted sessions
-node /home/cbasta/rtgf-sage/tools/cli/rcm-export.js \
+node /home/cbasta/rtgf-ai-stack/lore/tools/cli/rcm-export.js \
   --input ~/intenx-knowledge/rcm/flows/promoted/*.yaml \
   --format markdown \
   --output ~/.anythingllm/documents/intenx/sage-2026-q1/

@@ -4,7 +4,7 @@
 
 set -e
 
-LORE_ROOT="/home/cbasta/rtgf-sage"
+LORE_ROOT="/home/cbasta/rtgf-ai-stack/lore"
 CLAUDE_PROJECTS="$HOME/.claude/projects"
 
 echo "🌱 LORE Production Seeding"

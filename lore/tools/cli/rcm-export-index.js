@@ -18,7 +18,7 @@ import fg from 'fast-glob';
 import { execSync } from 'child_process';
 
 program
-  .option('-o, --output <path>', 'Output path for index JSON', '/home/cbasta/sage-exports/session-index.json')
+  .option('-o, --output <path>', 'Output path for index JSON', '/home/cbasta/lore-exports/session-index.json')
   .option('-r, --repos <paths...>', 'Knowledge repo paths', [
     '/home/cbasta/intenx-knowledge',
     '/home/cbasta/sensit-knowledge',

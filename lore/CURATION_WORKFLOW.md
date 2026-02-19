@@ -28,7 +28,7 @@ hypothesis (raw) → codified (tagged) → validated (checked) → promoted (RAG
 
 1. **Launch Web Dashboard:**
    ```bash
-   cd /home/cbasta/rtgf-sage/tools/web
+   cd /home/cbasta/rtgf-ai-stack/lore/tools/web
    node server.js ~/intenx-knowledge 3000
    # Open http://localhost:3000
    ```
