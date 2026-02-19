@@ -7,6 +7,9 @@ package-lock.json
 .env
 .env.local
 
+# LiteLLM — generated client keys (contain secrets)
+gateway/client-keys/
+
 # Test outputs
 test-output/
 *.test.yaml

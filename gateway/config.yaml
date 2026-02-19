@@ -1,0 +1,209 @@
+# LiteLLM Gateway Configuration
+# INTenX AI Stack — rtgf-ai-stack/gateway/
+#
+# Purpose: Single proxy endpoint for all model calls.
+#   - Routes Ollama local models + Anthropic + OpenAI
+#   - Per-client spend tracking via virtual keys (Teams)
+#   - Model fallback: local → cloud when Ollama unavailable
+#   - Budget enforcement per client before spend happens
+#
+# Usage:
+#   Start:  docker compose -f compose/gateway.yml up -d
+#   Health: curl http://localhost:4000/health
+#   Models: curl http://localhost:4000/v1/models
+#
+# Virtual key setup: gateway/setup-client.sh <client-name> [monthly-budget-usd]
+
+# ─── Model List ────────────────────────────────────────────────────────────────
+# OLLAMA_API_BASE is set via environment (default: http://host.docker.internal:11434)
+# Callers use OpenAI-compatible API: POST /v1/chat/completions with model name below.
+
+model_list:
+
+  # ── Ollama — Local Models ───────────────────────────────────────────────────
+  # Direct model names (callers can use exact Ollama name)
+
+  - model_name: qwen2.5-coder:14b
+    litellm_params:
+      model: ollama/qwen2.5-coder:14b
+      api_base: "os.environ/OLLAMA_API_BASE"
+
+  - model_name: deepseek-coder-v2:lite
+    litellm_params:
+      model: ollama/deepseek-coder-v2:lite
+      api_base: "os.environ/OLLAMA_API_BASE"
+
+  - model_name: llama3.1:8b
+    litellm_params:
+      model: ollama/llama3.1:8b
+      api_base: "os.environ/OLLAMA_API_BASE"
+
+  - model_name: qwen2.5-coder:7b
+    litellm_params:
+      model: ollama/qwen2.5-coder:7b
+      api_base: "os.environ/OLLAMA_API_BASE"
+
+  - model_name: mistral:7b
+    litellm_params:
+      model: ollama/mistral:7b
+      api_base: "os.environ/OLLAMA_API_BASE"
+
+  - model_name: phi4-mini
+    litellm_params:
+      model: ollama/phi4-mini
+      api_base: "os.environ/OLLAMA_API_BASE"
+
+  - model_name: llama3.2:3b
+    litellm_params:
+      model: ollama/llama3.2:3b
+      api_base: "os.environ/OLLAMA_API_BASE"
+
+  - model_name: gemma2:2b
+    litellm_params:
+      model: ollama/gemma2:2b
+      api_base: "os.environ/OLLAMA_API_BASE"
+
+  # ── Aliases — Stable Names for Application Code ─────────────────────────────
+  # Use these in application code instead of exact model names.
+  # Swap the underlying model without changing application code.
+
+  - model_name: local-coding         # Best local coding model
+    litellm_params:
+      model: ollama/qwen2.5-coder:14b
+      api_base: "os.environ/OLLAMA_API_BASE"
+
+  - model_name: local-coding-fast    # Fast local coding (smaller)
+    litellm_params:
+      model: ollama/qwen2.5-coder:7b
+      api_base: "os.environ/OLLAMA_API_BASE"
+
+  - model_name: local-general        # Best local general model
+    litellm_params:
+      model: ollama/llama3.1:8b
+      api_base: "os.environ/OLLAMA_API_BASE"
+
+  - model_name: local-fast           # Fastest local model (simple tasks)
+    litellm_params:
+      model: ollama/llama3.2:3b
+      api_base: "os.environ/OLLAMA_API_BASE"
+
+  - model_name: local-compact        # Compact capable model
+    litellm_params:
+      model: ollama/phi4-mini
+      api_base: "os.environ/OLLAMA_API_BASE"
+
+  # ── Anthropic Claude ─────────────────────────────────────────────────────────
+
+  - model_name: claude-sonnet-4-6
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+
+  - model_name: claude-opus-4-6
+    litellm_params:
+      model: anthropic/claude-opus-4-6
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+
+  - model_name: claude-haiku-4-5
+    litellm_params:
+      model: anthropic/claude-haiku-4-5-20251001
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+
+  # ── OpenAI ───────────────────────────────────────────────────────────────────
+
+  - model_name: gpt-4o
+    litellm_params:
+      model: openai/gpt-4o
+      api_key: "os.environ/OPENAI_API_KEY"
+
+  - model_name: gpt-4o-mini
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: "os.environ/OPENAI_API_KEY"
+
+  - model_name: o1
+    litellm_params:
+      model: openai/o1
+      api_key: "os.environ/OPENAI_API_KEY"
+
+  # ── Cloud Fallback Targets ───────────────────────────────────────────────────
+  # Used in fallback routing for local-* aliases when Ollama is unavailable.
+  # Named with "-fallback" suffix so they don't appear as primary options.
+
+  - model_name: cloud-coding-fallback
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+
+  - model_name: cloud-general-fallback
+    litellm_params:
+      model: anthropic/claude-haiku-4-5-20251001
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+
+# ─── Router Settings ──────────────────────────────────────────────────────────
+
+router_settings:
+  routing_strategy: "simple-shuffle"
+
+  # Fallback: if local model fails, route to cloud equivalent
+  # Triggered on: connection error, model not found, timeout
+  fallbacks:
+    - local-coding: ["cloud-coding-fallback"]
+    - local-coding-fast: ["cloud-coding-fallback"]
+    - local-general: ["cloud-general-fallback"]
+    - local-fast: ["cloud-general-fallback"]
+    - local-compact: ["cloud-general-fallback"]
+
+  # How long to wait before trying fallback (seconds)
+  timeout: 30
+
+  # Number of retries before falling back to next model
+  num_retries: 2
+
+  # Cache model availability (reduces probe frequency)
+  model_group_alias:
+    local-any:
+      - local-coding
+      - local-general
+      - local-fast
+
+# ─── LiteLLM Settings ────────────────────────────────────────────────────────
+
+litellm_settings:
+  # Drop unknown OpenAI params instead of erroring (needed for Ollama compat)
+  drop_params: true
+
+  # Redact secrets from logs
+  redact_user_api_key_info: true
+
+  # Request/response logging (set to true for debugging, false for production)
+  set_verbose: false
+
+  # Cache (optional — improves repeated prompt performance)
+  # cache: true
+  # cache_params:
+  #   type: "redis"
+  #   host: "redis"
+  #   port: 6379
+
+# ─── General Settings ────────────────────────────────────────────────────────
+
+general_settings:
+  # Master key — used to generate virtual keys and call admin API
+  # Set via LITELLM_MASTER_KEY environment variable
+  master_key: "os.environ/LITELLM_MASTER_KEY"
+
+  # Database for spend tracking and virtual key storage
+  # Set via DATABASE_URL environment variable
+  # Format: postgresql://user:pass@host:5432/dbname
+  database_url: "os.environ/DATABASE_URL"
+
+  # Expose /spend endpoints for cost attribution queries
+  store_model_in_db: true
+
+  # UI — built-in proxy dashboard (accessible at http://gateway-host:4000/ui)
+  ui_access_mode: "admin_only"
+
+  # Alert if spend approaches budget limits
+  # alerting: ["slack"]
+  # alerting_threshold: 0.8  # Alert at 80% of budget
