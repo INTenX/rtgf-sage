@@ -4,13 +4,13 @@
 #
 # Installation:
 #   crontab -e
-#   Add: 0 2 * * * /home/cbasta/rtgf-sage/cron-daily-import.sh >> /home/cbasta/logs/sage-import.log 2>&1
+#   Add: 0 2 * * * /home/cbasta/rtgf-ai-stack/lore/cron-daily-import.sh
 
 set -e
 
 LORE_ROOT="/home/cbasta/rtgf-ai-stack/lore"
 CLAUDE_PROJECTS="$HOME/.claude/projects"
-LOG_FILE="$HOME/logs/sage-import-$(date +%Y-%m-%d).log"
+LOG_FILE="$HOME/logs/lore-import-$(date +%Y-%m-%d).log"
 
 mkdir -p "$HOME/logs"
 
@@ -18,7 +18,7 @@ echo "=== LORE Daily Import ===" | tee -a "$LOG_FILE"
 echo "Date: $(date)" | tee -a "$LOG_FILE"
 echo | tee -a "$LOG_FILE"
 
-# Function to import sessions modified in last 24 hours
+# Import sessions modified in last 24 hours matching a glob pattern
 import_recent_sessions() {
   local project_pattern="$1"
   local target_repo="$2"
@@ -27,37 +27,48 @@ import_recent_sessions() {
   echo "Importing $client_name sessions..." | tee -a "$LOG_FILE"
 
   local count=0
-  find "$CLAUDE_PROJECTS"/$project_pattern -name "*.jsonl" -type f -mtime -1 2>/dev/null | while read session; do
+  while IFS= read -r session; do
     echo "  $(basename "$session")" | tee -a "$LOG_FILE"
 
-    node "$LORE_ROOT/tools/cli/rcm-import.js" \
+    if node "$LORE_ROOT/tools/cli/rcm-import.js" \
       --source "$session" \
       --platform claude-code \
-      --target "$target_repo" >> "$LOG_FILE" 2>&1
-
-    if [ $? -eq 0 ]; then
+      --target "$target_repo" >> "$LOG_FILE" 2>&1; then
       count=$((count + 1))
     fi
-  done
+  done < <(find "$CLAUDE_PROJECTS"/$project_pattern -name "*.jsonl" -type f -mtime -1 2>/dev/null)
 
   echo "  Imported: $count sessions" | tee -a "$LOG_FILE"
   echo | tee -a "$LOG_FILE"
 }
 
-# INTenX business sessions (business-ops, kicad-tools, etc.)
-import_recent_sessions "-home-cbasta-business-ops*" "$HOME/intenx-knowledge" "INTenX"
+# INTenX — all work/dev sessions
+import_recent_sessions "-home-cbasta" "$HOME/intenx-knowledge" "INTenX (home)"
+import_recent_sessions "-home-cbasta-business-ops*" "$HOME/intenx-knowledge" "INTenX (business-ops)"
 import_recent_sessions "-home-cbasta-dev-tools-*" "$HOME/intenx-knowledge" "INTenX (dev-tools)"
+import_recent_sessions "-home-cbasta-mechanical-tools" "$HOME/intenx-knowledge" "INTenX (mechanical)"
+import_recent_sessions "-home-cbasta-mess-development" "$HOME/intenx-knowledge" "INTenX (MESS)"
+import_recent_sessions "-home-cbasta-rtgf*" "$HOME/intenx-knowledge" "INTenX (rtgf)"
 
-# Makanui personal sessions
-import_recent_sessions "-home-cbasta-resale-app" "$HOME/makanui-knowledge" "Makanui"
+# Makanui — personal/resale sessions
+import_recent_sessions "-home-cbasta-resale-app" "$HOME/makanui-knowledge" "Makanui (resale)"
+import_recent_sessions "-home-cbasta-personal-finance" "$HOME/makanui-knowledge" "Makanui (finance)"
 
 # Test/experimental sessions
 import_recent_sessions "-home-cbasta-test" "$HOME/test-knowledge" "Test"
 
-# Commit imported sessions
-cd "$HOME/intenx-knowledge" && git add -A && git commit -m "rcm(import): Daily import $(date +%Y-%m-%d)" && git push || true
-cd "$HOME/makanui-knowledge" && git add -A && git commit -m "rcm(import): Daily import $(date +%Y-%m-%d)" && git push || true
-cd "$HOME/test-knowledge" && git add -A && git commit -m "rcm(import): Daily import $(date +%Y-%m-%d)" && git push || true
+# Commit + push repos that have new sessions
+for repo in intenx-knowledge makanui-knowledge test-knowledge; do
+  repo_path="$HOME/$repo"
+  if [ -d "$repo_path" ]; then
+    cd "$repo_path"
+    if ! git diff --quiet HEAD 2>/dev/null || git status --short | grep -q '^[?A]'; then
+      git add -A rcm/
+      git commit -m "chore(lore): Daily import $(date +%Y-%m-%d)" || true
+      git push || true
+    fi
+  fi
+done
 
 echo "✅ Daily import complete" | tee -a "$LOG_FILE"
 echo "===================" | tee -a "$LOG_FILE"
