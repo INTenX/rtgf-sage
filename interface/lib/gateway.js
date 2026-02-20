@@ -7,8 +7,8 @@ const { chatConfig } = require('./config')
 function clientFor(chatId) {
   const cfg = chatConfig(chatId)
   const apiKey = cfg?.litellm_key
-    ?? process.env.LITELLM_DEFAULT_KEY
-    ?? process.env.LITELLM_MASTER_KEY
+    || process.env.LITELLM_DEFAULT_KEY
+    || process.env.LITELLM_MASTER_KEY
 
   return new OpenAI({
     apiKey,
