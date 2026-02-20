@@ -249,7 +249,62 @@ export function convertClaudeCodeToCanonical(jsonlPath, options = {}) {
 }
 
 /**
- * Convert and save to YAML file
+ * Render canonical session to markdown with YAML frontmatter.
+ * Frontmatter holds all metadata. Body holds message content for indexing.
+ */
+export function canonicalToMarkdown(canonical) {
+  const { session, messages } = canonical;
+
+  const frontmatter = {
+    id: session.id,
+    title: session.metadata.title,
+    platform: session.source.platform,
+    platform_session_id: session.source.session_id,
+    created: session.created_at,
+    updated: session.updated_at,
+    flow_state: session.flow_state.current,
+    quality_score: session.flow_state.quality_score,
+    tags: session.metadata.tags,
+    summary: session.metadata.summary,
+    working_directory: session.metadata.working_directory,
+    git_branch: session.metadata.git_context?.branch || '',
+    git_repo: session.metadata.git_context?.repo || '',
+    message_count: messages.length,
+  };
+
+  const fm = yaml.dump(frontmatter, { lineWidth: -1, noRefs: true });
+
+  const lines = [`# ${session.metadata.title}`, ''];
+
+  for (const msg of messages) {
+    const ts = msg.timestamp
+      ? msg.timestamp.replace('T', ' ').replace(/\.\d+Z$/, ' UTC')
+      : '';
+
+    if (msg.role === 'assistant') {
+      const model = msg.model && msg.model !== 'unknown' ? ` · ${msg.model}` : '';
+      lines.push(`## Assistant · ${ts}${model}`, '');
+    } else {
+      lines.push(`## User · ${ts}`, '');
+    }
+
+    if (msg.content) {
+      lines.push(msg.content, '');
+    }
+
+    if (msg.tool_uses?.length > 0) {
+      const toolNames = msg.tool_uses.map(t => `\`${t.tool_name}\``).join(', ');
+      lines.push(`**Tools:** ${toolNames}`, '');
+    }
+
+    lines.push('---', '');
+  }
+
+  return `---\n${fm}---\n\n${lines.join('\n')}`;
+}
+
+/**
+ * Convert and save to markdown file
  */
 export function convertAndSave(jsonlPath, outputPath, options = {}) {
   const canonical = convertClaudeCodeToCanonical(jsonlPath, options);
@@ -260,18 +315,11 @@ export function convertAndSave(jsonlPath, outputPath, options = {}) {
     const date = new Date(canonical.session.created_at).toISOString().split('T')[0];
     const slug = slugify(canonical.session.metadata.title);
     const shortId = canonical.session.source.session_id.substring(0, 8);
-    const filename = `${date}_${slug}_${shortId}.yaml`;
+    const filename = `${date}_${slug}_${shortId}.md`;
     finalOutputPath = path.join(outputPath, filename);
   }
 
-  // Write YAML
-  const yamlContent = yaml.dump(canonical, {
-    indent: 2,
-    lineWidth: -1, // No line wrapping
-    noRefs: true,
-  });
-
-  fs.writeFileSync(finalOutputPath, yamlContent, 'utf-8');
+  fs.writeFileSync(finalOutputPath, canonicalToMarkdown(canonical), 'utf-8');
 
   return {
     canonicalPath: finalOutputPath,

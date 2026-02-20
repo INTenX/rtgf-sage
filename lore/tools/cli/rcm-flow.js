@@ -15,7 +15,7 @@
 import { program } from 'commander';
 import fs from 'fs';
 import path from 'path';
-import yaml from 'js-yaml';
+import matter from 'gray-matter';
 import { flowTransition, isGitRepo, initGitIfNeeded } from '../lib/git-operations.js';
 
 /**
@@ -75,22 +75,21 @@ function listSessions(rcmRoot, state) {
   }
 
   const files = fs.readdirSync(flowDir)
-    .filter(f => f.endsWith('.yaml'))
+    .filter(f => f.endsWith('.md'))
     .map(f => {
       const fullPath = path.join(flowDir, f);
       const stats = fs.statSync(fullPath);
-      const content = fs.readFileSync(fullPath, 'utf-8');
-      const session = yaml.load(content);
+      const { data } = matter(fs.readFileSync(fullPath, 'utf-8'));
 
       return {
         filename: f,
         path: fullPath,
         size: stats.size,
         modified: stats.mtime,
-        title: session.session?.metadata?.title || 'Untitled',
-        sessionId: session.session?.id,
-        tags: session.session?.metadata?.tags || [],
-        created: session.session?.created_at,
+        title: data.title || 'Untitled',
+        sessionId: data.id,
+        tags: data.tags || [],
+        created: data.created,
       };
     })
     .sort((a, b) => b.modified - a.modified);
@@ -195,7 +194,7 @@ async function listCommand(options) {
 
   sessions.forEach((s, i) => {
     const sizeKB = (s.size / 1024).toFixed(1);
-    const shortId = s.filename.split('_').pop().replace('.yaml', '').substring(0, 8);
+    const shortId = s.filename.split('_').pop().replace('.md', '').substring(0, 8);
 
     console.log(`   ${i + 1}. ${s.title}`);
     console.log(`      ID: ${shortId}`);
@@ -230,25 +229,24 @@ async function statusCommand(options) {
   }
 
   // Read session details
-  const content = fs.readFileSync(session.path, 'utf-8');
-  const data = yaml.load(content);
+  const { data } = matter(fs.readFileSync(session.path, 'utf-8'));
 
   const sizeKB = (fs.statSync(session.path).size / 1024).toFixed(1);
 
-  console.log(`   Title: ${data.session?.metadata?.title || 'Untitled'}`);
-  console.log(`   Session ID: ${data.session?.id}`);
+  console.log(`   Title: ${data.title || 'Untitled'}`);
+  console.log(`   Session ID: ${data.id}`);
   console.log(`   Current State: ${session.state}`);
   console.log(`   Size: ${sizeKB} KB`);
-  console.log(`   Created: ${data.session?.created_at}`);
-  console.log(`   Platform: ${data.session?.source?.platform}`);
-  console.log(`   Messages: ${data.messages?.length || 0}`);
+  console.log(`   Created: ${data.created}`);
+  console.log(`   Platform: ${data.platform}`);
+  console.log(`   Messages: ${data.message_count || 0}`);
 
-  if (data.session?.metadata?.tags?.length > 0) {
-    console.log(`   Tags: ${data.session.metadata.tags.join(', ')}`);
+  if (data.tags?.length > 0) {
+    console.log(`   Tags: ${data.tags.join(', ')}`);
   }
 
-  if (data.session?.flow_state?.quality_score !== null) {
-    console.log(`   Quality Score: ${data.session.flow_state.quality_score}`);
+  if (data.quality_score !== null && data.quality_score !== undefined) {
+    console.log(`   Quality Score: ${data.quality_score}`);
   }
 
   console.log('');

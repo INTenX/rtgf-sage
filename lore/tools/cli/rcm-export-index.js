@@ -12,7 +12,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import yaml from 'js-yaml';
+import matter from 'gray-matter';
 import { program } from 'commander';
 import fg from 'fast-glob';
 import { execSync } from 'child_process';
@@ -86,7 +86,7 @@ async function exportIndex() {
       console.log(`📦 Indexing ${repoName}...`);
 
       // Find all canonical YAML files
-      const sessionFiles = await fg('rcm/archive/canonical/**/*.yaml', {
+      const sessionFiles = await fg('rcm/archive/canonical/**/*.md', {
         cwd: repoPath,
         absolute: true
       });
@@ -98,7 +98,7 @@ async function exportIndex() {
       for (const sessionFile of sessionFiles) {
         try {
           const content = await fs.readFile(sessionFile, 'utf-8');
-          const session = yaml.load(content);
+          const { data } = matter(content);
 
           // Determine flow state by checking which directory has symlink
           let flowState = 'hypothesis';
@@ -116,21 +116,21 @@ async function exportIndex() {
           }
 
           const sessionIndex = {
-            id: session.session.id,
-            short_id: session.session.id.substring(0, 8),
-            title: session.session.metadata.title,
-            created_at: session.session.created_at,
-            updated_at: session.session.updated_at,
-            platform: session.session.source.platform,
-            platform_session_id: session.session.source.session_id,
-            tags: session.session.metadata.tags || [],
+            id: data.id,
+            short_id: data.id?.substring(0, 8),
+            title: data.title,
+            created_at: data.created,
+            updated_at: data.updated,
+            platform: data.platform,
+            platform_session_id: data.platform_session_id,
+            tags: data.tags || [],
             flow_state: flowState,
-            quality_score: session.session.flow_state.quality_score,
-            message_count: session.messages.length,
+            quality_score: data.quality_score,
+            message_count: data.message_count,
             repository: repoName,
             wsl_instance: options.wsl,
             canonical_path: sessionFile,
-            working_directory: session.session.metadata.working_directory
+            working_directory: data.working_directory
           };
 
           repoSessions.push(sessionIndex);

@@ -14,7 +14,7 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import yaml from 'js-yaml';
+import matter from 'gray-matter';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,28 +37,27 @@ function loadSessions(state) {
   }
 
   const files = fs.readdirSync(flowDir)
-    .filter(f => f.endsWith('.yaml'))
+    .filter(f => f.endsWith('.md'))
     .map(f => {
       try {
         const fullPath = path.join(flowDir, f);
         const stats = fs.statSync(fullPath);
-        const content = fs.readFileSync(fullPath, 'utf-8');
-        const session = yaml.load(content);
+        const { data } = matter(fs.readFileSync(fullPath, 'utf-8'));
 
         return {
           filename: f,
           path: fullPath,
           size: stats.size,
           modified: stats.mtime,
-          title: session.session?.metadata?.title || 'Untitled',
-          sessionId: session.session?.id,
-          shortId: f.split('_').pop().replace('.yaml', '').substring(0, 8),
-          tags: session.session?.metadata?.tags || [],
-          created: session.session?.created_at,
-          platform: session.session?.source?.platform || 'unknown',
-          messageCount: session.messages?.length || 0,
-          flowState: session.session?.flow_state?.current || state,
-          qualityScore: session.session?.flow_state?.quality_score,
+          title: data.title || 'Untitled',
+          sessionId: data.id,
+          shortId: f.split('_').pop().replace('.md', '').substring(0, 8),
+          tags: data.tags || [],
+          created: data.created,
+          platform: data.platform || 'unknown',
+          messageCount: data.message_count || 0,
+          flowState: data.flow_state || state,
+          qualityScore: data.quality_score,
         };
       } catch (err) {
         console.error(`Error loading session ${f}:`, err.message);
@@ -122,12 +121,12 @@ app.get('/api/session/:id', (req, res) => {
     if (session) {
       // Load full content
       const content = fs.readFileSync(session.path, 'utf-8');
-      const fullSession = yaml.load(content);
+      const { data, content: body } = matter(content);
 
       return res.json({
         ...session,
-        messages: fullSession.messages,
-        fullContent: fullSession,
+        frontmatter: data,
+        rawMarkdown: body,
       });
     }
   }
