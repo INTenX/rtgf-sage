@@ -12,12 +12,17 @@
 
 chats:
   # ── Admin / Personal ──────────────────────────────────────────────────────
-  # Replace with your actual chat ID from /whoami
   default:
     name: personal
     client: personal
     default_model: local-general
     # litellm_key: sk-virt-personal-...   # Falls back to LITELLM_DEFAULT_KEY if not set
+    admin: true
+
+  "8533717947":
+    name: cbasta
+    client: personal
+    default_model: local-general
     admin: true
 
   # ── Example client groups (add after running ./gateway/setup-client.sh) ──
@@ -37,10 +42,12 @@ chats:
 # These map /ask, /code, /reason commands to gateway model aliases.
 # Models must exist in gateway/config.yaml.
 models:
-  ask: local-general
-  code: local-coding
-  reason: local-reasoning
-  fast: local-fast
+  # Gateway aliases (used when LiteLLM gateway is deployed)
+  # Direct Ollama names (used when GATEWAY_URL points to Ollama)
+  ask: llama3.1:8b
+  code: qwen2.5-coder:14b
+  reason: deepseek-r1:14b
+  fast: llama3.2:3b
 
 # ── Scheduled Jobs ──────────────────────────────────────────────────────────
 # Cron jobs that run automatically and post results to a chat.
