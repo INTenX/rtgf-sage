@@ -41,7 +41,6 @@ services:
       --config /app/config.yaml
       --port 4000
       --host 0.0.0.0
-      --detailed_debug false
 
     depends_on:
       db:
