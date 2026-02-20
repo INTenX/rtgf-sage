@@ -50,14 +50,15 @@ INTenX operates an AI-first consulting practice across multiple clients, discipl
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| **Ollama** | ✅ Operational | Windows/AMD, accessible from all WSL instances |
+| **Ollama** | ✅ Operational | Windows/AMD RX 7600S (8GB VRAM), accessible from all WSL instances. 8 models + deepseek-r1:14b (pulling). |
 | **LORE (session archival)** | ✅ Production | Claude Code working, 100+ sessions. ChatGPT/Gemini adapters pending. |
 | **LibreChat** | ✅ Keep + decouple | Ollama web UI value. Route RAG through LiteLLM — no direct RAG API integration. |
 | **Cross-WSL session index** | ✅ Operational | JSON index exported, queryable by Control Center |
-| **LiteLLM gateway** | ⬜ Not started | Priority — routes Ollama + cloud APIs, per-client attribution |
+| **wsl-audit** | ✅ Built | `~/.local/bin/wsl-audit` + `scripts/wsl-audit`. Platform health: .wslconfig, memory, Docker restart detection. |
+| **LiteLLM gateway** | ✅ Built | `gateway/` + `compose/gateway.yml`. Routes Ollama + Anthropic + OpenAI. Per-client virtual keys + budget enforcement. Needs deploy on Ubuntu-AI-Hub. |
 | **Observability (Opcode)** | ⬜ Not started | Session browsing; Opcode first |
-| **wsl-audit** | ⬜ Not started | Platform health monitoring — prerequisite to scaling AI services |
-| **RELAY** | ⬜ Planned | Inter-session coordination — not yet designed |
+| **LORE daily cron** | ⬜ Not started | `cron-daily-import.sh` ready, needs `crontab -e` |
+| **RELAY** | ⬜ Planned | Inter-session coordination — not yet designed. Leash (StrongDM) flagged as runtime enforcement candidate. |
 | **Platform bridge tools** | ✅ Operational | `showclaude`, `rename-session-by-id`, `resume-by-name` — compensate for Claude Code gaps |
 
 ---

@@ -1,0 +1,60 @@
+# rtgf-interface — Chat Configuration
+# Maps Telegram chat IDs to clients, models, and LiteLLM virtual keys.
+#
+# How to find chat IDs:
+#   1. Start the bot: npm start
+#   2. Send /whoami in any chat with the bot
+#   3. Bot replies with your chat ID
+#
+# Chat types:
+#   Positive IDs  → private chats (individual users)
+#   Negative IDs  → group chats (start with -100...)
+
+chats:
+  # ── Admin / Personal ──────────────────────────────────────────────────────
+  # Replace with your actual chat ID from /whoami
+  default:
+    name: personal
+    client: personal
+    default_model: local-general
+    # litellm_key: sk-virt-personal-...   # Falls back to LITELLM_DEFAULT_KEY if not set
+    admin: true
+
+  # ── Example client groups (add after running ./gateway/setup-client.sh) ──
+  # "-1001234567890":
+  #   name: sensit-dev
+  #   client: sensit-dev
+  #   default_model: local-coding
+  #   litellm_key: sk-virt-sensit-...
+
+  # "-1009876543210":
+  #   name: client-acme
+  #   client: client-acme
+  #   default_model: local-general
+  #   litellm_key: sk-virt-acme-...
+
+# ── Model Shortcuts ────────────────────────────────────────────────────────
+# These map /ask, /code, /reason commands to gateway model aliases.
+# Models must exist in gateway/config.yaml.
+models:
+  ask: local-general
+  code: local-coding
+  reason: local-reasoning
+  fast: local-fast
+
+# ── Scheduled Jobs ──────────────────────────────────────────────────────────
+# Cron jobs that run automatically and post results to a chat.
+# chat_id: the chat to post to (use your admin chat ID)
+scheduled:
+  - name: daily-health
+    cron: "0 7 * * *"        # 7am daily
+    chat_id: default          # 'default' = ADMIN_CHAT_ID env var
+    command: wsl-audit
+    args: ["risks"]
+    label: "Morning platform health"
+
+  # - name: weekly-spend
+  #   cron: "0 9 * * 1"      # 9am Monday
+  #   chat_id: default
+  #   command: spend
+  #   label: "Weekly spend summary"
