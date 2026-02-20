@@ -159,87 +159,95 @@ Full per-client billing visibility requires three layers working together:
 
 ---
 
-## Prioritized Implementation Roadmap
+## Vision
 
-### P0 — Platform Safety (Before Scaling)
-**wsl-audit tool** — `~/.local/bin/wsl-audit`, also versioned in `scripts/`
-- Detect restart storms, missing `.wslconfig` caps, risky Docker policies
-- On-demand + watch mode
-- Unblocks running AI services with confidence
-
-*Rationale: The Docker restart storm incident was preventable. Can't scale AI services without platform health guardrails.*
+A single person directing a coordinated network of AI agents that autonomously execute client work, accumulate institutional knowledge, track their own costs, and hand off context seamlessly — while the human stays at the strategy and relationship layer.
 
 ---
 
-### P1 — Gateway + Cost Attribution
-**LiteLLM gateway** — `gateway/` + `compose/`
-- Docker Compose service routing Ollama + Anthropic + OpenAI
-- Virtual keys per client for budget enforcement
-- Request logging for spend attribution
-- Update any programmatic API calls to route through gateway
+## Phased Roadmap
 
-*Rationale: Control Center priority. Enables per-client attribution for API spend and future billing. Foundation for all agent-to-model calls.*
+### Phase 1 — Foundation ✅ *Complete*
 
----
+Platform safety, model routing, cost attribution, knowledge archival, ambient interface. The stack exists and can be operated without it collapsing.
 
-### P2 — Session Observability
-**Opcode** — `observability/`
-- Auto-detects `~/.claude/projects/`, session browsing UI
-- Complements LORE (Opcode for browsing, LORE for archival/RAG)
-
-**LORE daily cron** — `cron-daily-import.sh`
-- Automate zero-toil session archival
-- SensitDev orphan detection + sync
-
-*Rationale: Low effort, high value. Closes the zero-toil archival gap.*
+| Component | Status |
+|-----------|--------|
+| wsl-audit | ✅ Built |
+| LiteLLM gateway | ✅ Deployed |
+| LORE (Claude Code) | ✅ Production |
+| Telegram bot | ✅ Running |
 
 ---
 
-### P3 — Multi-Platform Knowledge
-**ChatGPT and Gemini adapters** — `lore/tools/adapters/`
-- Import ChatGPT conversation exports
-- Import Gemini/Google Takeout exports
-- Unifies all session knowledge into LORE
+### Phase 2 — Knowledge Activation
 
-*Rationale: Knowledge from ChatGPT and Gemini sessions is currently lost. Codex CLI sessions will need this too.*
+Turn LORE from an archive into a knowledge system agents can actually use. Knowledge compounds across sessions instead of evaporating.
 
----
+- **LORE daily cron** — zero-toil auto-archival, no manual import runs
+- **Multi-platform adapters** — ChatGPT and Gemini exports captured (all knowledge in one place)
+- **Session search CLI** — query past sessions before starting work
+- **RAG pipeline** — promoted sessions → vector store → retrievable context for agents
+- **Opcode** — session browsing UI complementing LORE
 
-### P4 — Knowledge Activation
-**Session search CLI** — `lore/tools/cli/ctx-search.js`
-**RAG pipeline** — promoted sessions → AnythingLLM
-- Make knowledge queryable by agents before starting work
-- Close the loop: archive → curate → retrieve → reuse
-
-*Rationale: LORE is an archive today. Search and RAG make it a knowledge system.*
+*Unlocks: A new session can pull what previous sessions knew.*
 
 ---
 
-### P5 — Inter-Session Coordination (RELAY)
-**RELAY design and implementation** — `relay/`
-- Define handoff protocol between sessions
-- Enable Control Center to delegate tasks with context
-- Enable agents to pick up where others left off
+### Phase 3 — Persistent Chief of Staff Interface
 
-*Rationale: Highest leverage once P0-P4 are stable. Enables true multi-agent workflows.*
+The Telegram bot evolves from remote control to stateful agent interface. A persistent presence you can delegate to from anywhere — no terminal required.
+
+- **Conversation history** — stateful multi-turn conversations per chat
+- **LORE context injection** — bot pulls relevant past sessions before responding
+- **Task tracking** — delegate via Telegram, outcomes reported back
+
+*Unlocks: A persistent agent that knows your history, clients, and current work.*
+
+---
+
+### Phase 4 — Delegatable Agents (Dispatcher)
+
+The critical leap. Claude Code requires a human in the loop. Autonomous execution requires a **Claude API agent layer** — programmatic, dispatchable, no terminal.
+
+- **Task delegation protocol** — structured format: client, goal, context, deliverable
+- **Dispatcher component** — Claude API agents dispatched by the bot (`dispatcher/`)
+- **LORE context pull** — agents retrieve relevant knowledge before executing
+- **Outcome archival** — results automatically archived back into LORE
+- **Telegram reporting** — task status and outcomes delivered to bot
+
+*Unlocks: Delegate a task in Telegram, an agent executes it, result lands in knowledge base, summary in your chat.*
+
+---
+
+### Phase 5 — Coordinated Agent Network (RELAY)
+
+Multiple specialized agents with defined roles that coordinate and delegate to each other. Human operates at strategy and review layer only.
+
+- **Agent registry** — what agents exist, what they're capable of
+- **Handoff protocol** — structured context passing between agents (`relay/`)
+- **Specialized agents** — coder, researcher, analyst, writer roles
+- **Human-in-loop gates** — approval checkpoints before high-stakes actions
+
+*Unlocks: The vision. Set direction, agents execute and coordinate, outcomes reported.*
 
 ---
 
 ## Success Metrics
 
-| Goal | Metric |
-|------|--------|
-| Cost attribution | Can answer "how much AI spend on Client X this month?" within 5 minutes |
-| Session archival | 100% of Claude Code sessions archived within 24 hours, zero manual toil |
-| Platform safety | Zero undetected runaway incidents |
-| Knowledge reuse | At least one instance per week of "I found that in LORE" accelerating work |
-| Gateway coverage | 100% of programmatic API calls routed through LiteLLM |
+| Phase | Metric |
+|-------|--------|
+| 1 — Foundation | Platform doesn't fall over. All model calls routed through gateway. |
+| 2 — Knowledge | "I found that in LORE" accelerates work at least once per week. 100% of sessions auto-archived. |
+| 3 — Chief of Staff | Can delegate and get a useful response from Telegram without opening a terminal. |
+| 4 — Dispatcher | Can assign a scoped task via Telegram and receive a completed deliverable without touching a keyboard. |
+| 5 — Network | Multiple agents execute a multi-step client engagement with one human direction-setting prompt. |
 
 ---
 
 ## Open Questions
 
-1. **wsl-audit scope:** Build it ourselves (bash script, fully designed) or adopt an existing WSL monitoring tool? Fully designed spec exists — implementation is ~2-3 hours of work.
-2. **AnythingLLM vs alternatives:** Still the RAG target? Or re-evaluate given LiteLLM decouples the backend?
-3. **RELAY design:** What's the minimum viable handoff protocol? File-based (LORE session reference)? Message queue? API?
-4. **Codex CLI attribution:** Codex sessions aren't yet imported to LORE. When the ChatGPT adapter is built, will Codex sessions export in the same format?
+1. **RAG target:** AnythingLLM still the right choice? Re-evaluate given LiteLLM decouples the backend.
+2. **Dispatcher substrate:** Claude API (Anthropic SDK) vs. an agent framework (LangGraph, CrewAI)? Tradeoffs: control vs. scaffolding.
+3. **RELAY protocol:** Minimum viable handoff — file-based LORE reference, message queue, or API?
+4. **Human-in-loop gates:** For Phase 4+, what actions require explicit approval before execution?
