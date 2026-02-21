@@ -212,12 +212,13 @@ general_settings:
   master_key: "os.environ/LITELLM_MASTER_KEY"
 
   # Database for spend tracking and virtual key storage
-  # Set via DATABASE_URL environment variable
-  # Format: postgresql://user:pass@host:5432/dbname
-  database_url: "os.environ/DATABASE_URL"
+  # Disabled until Prisma/wolfi engine compatibility is resolved.
+  # Re-enable by uncommenting database_url + store_model_in_db, and passing
+  # DATABASE_URL in gateway/.env.
+  # database_url: "os.environ/DATABASE_URL"
 
   # Expose /spend endpoints for cost attribution queries
-  store_model_in_db: true
+  # store_model_in_db: true
 
   # UI — built-in proxy dashboard (accessible at http://gateway-host:4000/ui)
   ui_access_mode: "admin_only"
