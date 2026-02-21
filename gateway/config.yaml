@@ -105,72 +105,72 @@ model_list:
       api_base: "os.environ/OLLAMA_API_BASE"
 
   # ── Anthropic Claude ─────────────────────────────────────────────────────────
+  # Uncomment when ANTHROPIC_API_KEY is set in gateway/.env
 
-  - model_name: claude-sonnet-4-6
-    litellm_params:
-      model: anthropic/claude-sonnet-4-6
-      api_key: "os.environ/ANTHROPIC_API_KEY"
+  # - model_name: claude-sonnet-4-6
+  #   litellm_params:
+  #     model: anthropic/claude-sonnet-4-6
+  #     api_key: "os.environ/ANTHROPIC_API_KEY"
 
-  - model_name: claude-opus-4-6
-    litellm_params:
-      model: anthropic/claude-opus-4-6
-      api_key: "os.environ/ANTHROPIC_API_KEY"
+  # - model_name: claude-opus-4-6
+  #   litellm_params:
+  #     model: anthropic/claude-opus-4-6
+  #     api_key: "os.environ/ANTHROPIC_API_KEY"
 
-  - model_name: claude-haiku-4-5
-    litellm_params:
-      model: anthropic/claude-haiku-4-5-20251001
-      api_key: "os.environ/ANTHROPIC_API_KEY"
+  # - model_name: claude-haiku-4-5
+  #   litellm_params:
+  #     model: anthropic/claude-haiku-4-5-20251001
+  #     api_key: "os.environ/ANTHROPIC_API_KEY"
 
   # ── OpenAI ───────────────────────────────────────────────────────────────────
+  # Uncomment when OPENAI_API_KEY is set in gateway/.env
 
-  - model_name: gpt-4o
-    litellm_params:
-      model: openai/gpt-4o
-      api_key: "os.environ/OPENAI_API_KEY"
+  # - model_name: gpt-4o
+  #   litellm_params:
+  #     model: openai/gpt-4o
+  #     api_key: "os.environ/OPENAI_API_KEY"
 
-  - model_name: gpt-4o-mini
-    litellm_params:
-      model: openai/gpt-4o-mini
-      api_key: "os.environ/OPENAI_API_KEY"
+  # - model_name: gpt-4o-mini
+  #   litellm_params:
+  #     model: openai/gpt-4o-mini
+  #     api_key: "os.environ/OPENAI_API_KEY"
 
-  - model_name: o1
-    litellm_params:
-      model: openai/o1
-      api_key: "os.environ/OPENAI_API_KEY"
+  # - model_name: o1
+  #   litellm_params:
+  #     model: openai/o1
+  #     api_key: "os.environ/OPENAI_API_KEY"
 
   # ── Cloud Fallback Targets ───────────────────────────────────────────────────
-  # Used in fallback routing for local-* aliases when Ollama is unavailable.
-  # Named with "-fallback" suffix so they don't appear as primary options.
+  # Uncomment alongside cloud models above.
 
-  - model_name: cloud-reasoning-fallback
-    litellm_params:
-      model: anthropic/claude-sonnet-4-6
-      api_key: "os.environ/ANTHROPIC_API_KEY"
+  # - model_name: cloud-reasoning-fallback
+  #   litellm_params:
+  #     model: anthropic/claude-sonnet-4-6
+  #     api_key: "os.environ/ANTHROPIC_API_KEY"
 
-  - model_name: cloud-coding-fallback
-    litellm_params:
-      model: anthropic/claude-sonnet-4-6
-      api_key: "os.environ/ANTHROPIC_API_KEY"
+  # - model_name: cloud-coding-fallback
+  #   litellm_params:
+  #     model: anthropic/claude-sonnet-4-6
+  #     api_key: "os.environ/ANTHROPIC_API_KEY"
 
-  - model_name: cloud-general-fallback
-    litellm_params:
-      model: anthropic/claude-haiku-4-5-20251001
-      api_key: "os.environ/ANTHROPIC_API_KEY"
+  # - model_name: cloud-general-fallback
+  #   litellm_params:
+  #     model: anthropic/claude-haiku-4-5-20251001
+  #     api_key: "os.environ/ANTHROPIC_API_KEY"
 
 # ─── Router Settings ──────────────────────────────────────────────────────────
 
 router_settings:
   routing_strategy: "simple-shuffle"
 
-  # Fallback: if local model fails, route to cloud equivalent
-  # Triggered on: connection error, model not found, timeout
-  fallbacks:
-    - local-coding: ["cloud-coding-fallback"]
-    - local-coding-fast: ["cloud-coding-fallback"]
-    - local-general: ["cloud-general-fallback"]
-    - local-fast: ["cloud-general-fallback"]
-    - local-compact: ["cloud-general-fallback"]
-    - local-reasoning: ["cloud-reasoning-fallback"]
+  # Fallback routing — re-enable when cloud models are uncommented above
+  # fallbacks:
+  #   - local-coding: ["cloud-coding-fallback"]
+  #   - local-coding-fast: ["cloud-coding-fallback"]
+  #   - local-general: ["cloud-general-fallback"]
+  #   - local-fast: ["cloud-general-fallback"]
+  #   - local-compact: ["cloud-general-fallback"]
+  #   - local-reasoning: ["cloud-reasoning-fallback"]
 
   # How long to wait before trying fallback (seconds)
   timeout: 30
