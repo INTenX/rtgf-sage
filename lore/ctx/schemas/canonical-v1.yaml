@@ -93,6 +93,53 @@ fields:
         required: false
         description: "Quality assessment score (for validated/promoted states)"
 
+    security:
+      description: "Phase 2 security fields — audit trail, client isolation, access control"
+      client:
+        type: string
+        required: true
+        default: "intenx"
+        description: "Client context this session belongs to. Used for knowledge isolation in multi-client search."
+        examples: ["intenx", "sensit", "makanui", "ratio11"]
+      access_level:
+        type: string
+        enum: [internal, client, restricted]
+        required: true
+        default: "internal"
+        description: |
+          Who may access this session in search/RAG results.
+          internal: INTenX team only
+          client: shareable with the named client
+          restricted: requires explicit approval, never in RAG
+      data_classification:
+        type: string
+        enum: [normal, sensitive, restricted]
+        required: true
+        default: "normal"
+        description: |
+          Data sensitivity classification.
+          normal: no special handling required
+          sensitive: contains PII, financial, or confidential client data
+          restricted: credentials, keys, or regulated data — never archived in plaintext
+      adverse_events:
+        type: array
+        items: string
+        required: false
+        default: []
+        description: "Errors, API failures, permission denials, and anomalies encountered during this session"
+        examples: [["API rate limit hit", "Tool call blocked: rm -rf"]]
+      tool_calls_blocked:
+        type: integer
+        min: 0
+        required: false
+        default: 0
+        description: "Count of tool calls blocked by SENTINEL pre-tool-use hook during this session"
+      cost_usd:
+        type: number
+        required: false
+        default: null
+        description: "Total API cost in USD for this session. Populated post-session from LiteLLM spend log."
+
   messages:
     type: array
     required: true
@@ -207,3 +254,11 @@ changelog:
       - "Added RTGF flow_state extension"
       - "Defined three fidelity levels"
       - "Support for Claude Code, ChatGPT, Gemini platforms"
+  v1.1:
+    date: "2026-02-22"
+    changes:
+      - "Added session.security block: client, access_level, data_classification"
+      - "Added session.security.adverse_events: array of errors/blocks during session"
+      - "Added session.security.tool_calls_blocked: SENTINEL hook block count"
+      - "Added session.security.cost_usd: post-session LiteLLM spend attribution"
+      - "All new fields are backward-compatible (have defaults, not required for v1.0 sessions)"

@@ -1,6 +1,6 @@
 # PRD: INTenX AI Development Stack
-**Version:** 0.1 (Draft)
-**Date:** 2026-02-19
+**Version:** 0.2 (Security-First Rework)
+**Date:** 2026-02-22
 **Owner:** INTenX / AI Stack session
 
 ---
@@ -34,8 +34,9 @@ INTenX operates an AI-first consulting practice across multiple clients, discipl
 2. **Zero-toil session archival** — all LLM conversations across all platforms automatically archived, versioned, searchable.
 3. **Unified model routing** — one endpoint for local (Ollama) and cloud (Anthropic, OpenAI) models; swap backends without changing application code.
 4. **Platform health observability** — proactive detection of WSL/Docker runaway conditions and resource exhaustion before they cause incidents.
-5. **Session-level knowledge reuse** — past sessions discoverable and retrievable as context for future work (RAG pipeline).
-6. **Inter-session coordination** — agents and sessions able to hand off context and tasks to each other (RELAY — future).
+5. **Security-by-default autonomous operation** — every tool call logged, dangerous operations blocked before execution, full audit trail for SOC 2 evidence.
+6. **Session-level knowledge reuse** — past sessions discoverable and retrievable as context for future work (RAG pipeline).
+7. **Inter-session coordination** — agents and sessions able to hand off context and tasks to each other (RELAY — future).
 
 ## Non-Goals
 
@@ -57,7 +58,8 @@ INTenX operates an AI-first consulting practice across multiple clients, discipl
 | **wsl-audit** | ✅ Built | `~/.local/bin/wsl-audit` + `scripts/wsl-audit`. Platform health: .wslconfig, memory, Docker restart detection. |
 | **LiteLLM gateway** | ✅ Built | `gateway/` + `compose/gateway.yml`. Routes Ollama + Anthropic + OpenAI. Per-client virtual keys + budget enforcement. Needs deploy on Ubuntu-AI-Hub. |
 | **Observability (Opcode)** | ⬜ Not started | Session browsing; Opcode first |
-| **LORE daily cron** | ⬜ Not started | `cron-daily-import.sh` ready, needs `crontab -e` |
+| **LORE daily cron** | ✅ Built | `cron-daily-import.sh` + `crontab -e` configured |
+| **SENTINEL (hooks)** | ⬜ Phase 2 | `hooks/pre-tool-use.sh` + `hooks/post-tool-use.sh` — built, needs `install-hooks.sh` run |
 | **RELAY** | ⬜ Planned | Inter-session coordination — not yet designed. Leash (StrongDM) flagged as runtime enforcement candidate. |
 | **Platform bridge tools** | ✅ Operational | `showclaude`, `rename-session-by-id`, `resume-by-name` — compensate for Claude Code gaps |
 
@@ -101,10 +103,30 @@ Inter-session coordination. Enables Claude Code sessions and future agents to ha
 
 ---
 
+### SENTINEL (`hooks/`)
+Real-time monitoring and enforcement layer. Phase 2 Security Foundation component.
+
+**Pre-tool-use hook (`hooks/pre-tool-use.sh`):**
+- Intercepts every Claude Code tool call before execution
+- Checks against configurable block policy (`hooks/policy/blocked-patterns.json`)
+- Blocks: `rm -rf`, `git reset --hard`, force push, SQL DDL drops, SSH key access, private key files
+- Warns: `.env` access, `--no-verify` commits, production env files
+- Writes structured JSONL audit log: `~/.claude/audit/YYYY-MM-DD.jsonl`
+- Sends Telegram alert on blocks (requires `sentinel.env` config)
+
+**Post-tool-use hook (`hooks/post-tool-use.sh`):**
+- Logs tool outcomes to same daily audit log (observe-only, never blocks)
+
+**Install:** `bash ~/rtgf-ai-stack/hooks/install-hooks.sh`
+
+**RTGF mapping:** PCM (Pre-Commit Mapping) — every tool call is a commit that must pass a gate.
+
+---
+
 ### Scripts (`scripts/`)
 Shared operational scripts. Currently lives in `/mnt/c/Temp/wsl-shared/`. Migration into repo provides versioning and portability.
 - `ollama-setup.sh` — canonical Ollama environment setup
-- `wsl-audit` — platform health tool (when built)
+- `wsl-audit` — platform health tool with structured JSON event log (Phase 2 enhanced)
 
 ---
 
@@ -177,57 +199,129 @@ Platform safety, model routing, cost attribution, knowledge archival, ambient in
 | LiteLLM gateway | ✅ Deployed |
 | LORE (Claude Code) | ✅ Production |
 | Telegram bot | ✅ Running |
+| LORE daily cron | ✅ Configured |
+
+**Security posture:** Platform health monitoring, ephemeral cost logging, session archival. No blocking controls.
 
 ---
 
-### Phase 2 — Knowledge Activation
+### Phase 2 — Security Foundation *(current)*
 
-Turn LORE from an archive into a knowledge system agents can actually use. Knowledge compounds across sessions instead of evaporating.
+> **Gate:** Cannot proceed to Phase 5 (Delegatable Agents) without Phase 2 complete.
 
-- **LORE daily cron** — zero-toil auto-archival, no manual import runs
-- **Multi-platform adapters** — ChatGPT and Gemini exports captured (all knowledge in one place)
+Real-time monitoring and recording of all agentic tool calls, file access, and destructive operations. This phase makes the stack auditable — every action is logged before it executes. Security is first-class, not bolted on.
+
+#### 2a. SENTINEL — Claude Code Hooks
+
+The only layer that can **block** Claude Code actions before they execute.
+
+- **`hooks/pre-tool-use.sh`** — log + block gate for all tool calls
+- **`hooks/post-tool-use.sh`** — outcome logging (observe-only)
+- **`hooks/policy/blocked-patterns.json`** — configurable block/warn rules
+- **Audit log** — `~/.claude/audit/YYYY-MM-DD.jsonl` (structured JSONL)
+- **Telegram alerts** — blocks trigger immediate notification
+
+**Blocked patterns:** `rm -rf`, `git reset --hard`, force push, SQL DDL drops, SSH key files, private key files, curl|bash.
+**Warned patterns:** `.env` access, `--no-verify` commits, production env files.
+
+**Install:** `bash ~/rtgf-ai-stack/hooks/install-hooks.sh`
+
+#### 2b. LiteLLM Audit Persistence
+
+Re-enable spend tracking with SQLite file in a named Docker volume. No external DB required. Every model API call is persisted across container restarts.
+
+- `DATABASE_URL=sqlite:////data/litellm.db` in `compose/gateway.yml`
+- Named volume `litellm-data` for persistence
+- `store_model_in_db: true` in `gateway/config.yaml`
+- Verbose request logging enabled (`set_verbose: true`)
+
+#### 2c. LORE Enhanced — Security Fields
+
+New fields in every archived session for client isolation and audit trail:
+
+| Field | Purpose |
+|-------|---------|
+| `client` | Which client this session belongs to (scopes RAG search) |
+| `access_level` | `internal` / `client` / `restricted` — controls sharing |
+| `data_classification` | `normal` / `sensitive` / `restricted` |
+| `adverse_events` | Errors, blocks, and anomalies during this session |
+| `tool_calls_blocked` | Count of SENTINEL blocks this session |
+| `cost_usd` | LiteLLM spend attribution (populated post-session) |
+
+#### 2d. wsl-audit Alerting
+
+Structured JSONL event log (`~/.local/share/wsl-audit/events/YYYY-MM-DD.jsonl`) for all CRIT/WARN events. Telegram alerts on CRIT with 1-hour cooldown per message. New `wsl-audit events` subcommand to query log.
+
+#### Phase 2 Verification Checklist
+
+- [ ] Run `bash ~/rtgf-ai-stack/hooks/install-hooks.sh`
+- [ ] Ask Claude to read `/etc/passwd` — hook blocks, audit log entry created
+- [ ] Restart LiteLLM gateway — spend data persists in SQLite
+- [ ] Import a session with LORE — `client` field present in frontmatter
+- [ ] Trigger memory > 80% condition — Telegram alert received
+
+*Unlocks: Every action is observable. The stack has a tamper-evident audit trail.*
+
+---
+
+### Phase 3 — Knowledge Activation *(was Phase 2)*
+
+Turn LORE from an archive into a knowledge system agents can actually use. Now with security fields: search results scoped by `client` field — no cross-client knowledge leakage.
+
+- **Multi-platform adapters** — ChatGPT and Gemini exports captured
 - **Session search CLI** — query past sessions before starting work
-- **RAG pipeline** — promoted sessions → vector store → retrievable context for agents
+- **RAG pipeline** — promoted sessions → vector store → retrievable context
 - **Opcode** — session browsing UI complementing LORE
+- **Client-scoped search** — `client` field enforced on all search results
 
-*Unlocks: A new session can pull what previous sessions knew.*
+*Unlocks: A new session can pull what previous sessions knew, scoped to the right client.*
 
 ---
 
-### Phase 3 — Persistent Chief of Staff Interface
+### Phase 4 — Persistent Chief of Staff Interface *(was Phase 3)*
 
-The Telegram bot evolves from remote control to stateful agent interface. A persistent presence you can delegate to from anywhere — no terminal required.
+The Telegram bot evolves from remote control to stateful agent interface.
 
 - **Conversation history** — stateful multi-turn conversations per chat
 - **LORE context injection** — bot pulls relevant past sessions before responding
 - **Task tracking** — delegate via Telegram, outcomes reported back
+- **Command authorization** — only `ADMIN_CHAT_ID` can trigger agent delegation
+- **All bot commands logged** as LORE events with `access_level`
 
 *Unlocks: A persistent agent that knows your history, clients, and current work.*
 
 ---
 
-### Phase 4 — Delegatable Agents (Dispatcher)
+### Phase 5 — Delegatable Agents (Dispatcher) *(was Phase 4)*
+
+> **Prerequisite: Phase 2 complete.** Cannot deploy autonomous agents without the SENTINEL hook layer and audit log in place.
 
 The critical leap. Claude Code requires a human in the loop. Autonomous execution requires a **Claude API agent layer** — programmatic, dispatchable, no terminal.
 
 - **Task delegation protocol** — structured format: client, goal, context, deliverable
 - **Dispatcher component** — Claude API agents dispatched by the bot (`dispatcher/`)
 - **LORE context pull** — agents retrieve relevant knowledge before executing
-- **Outcome archival** — results automatically archived back into LORE
-- **Telegram reporting** — task status and outcomes delivered to bot
+- **Outcome archival** — results automatically archived back into LORE with security fields
+- **Capability manifests** — each agent type has a Cedar policy file defining allowed tools, directories, API endpoints
+- **Human-in-loop gates** — high-stakes actions (destructive ops, git push, spend > threshold) require Telegram approval
+- **Client isolation** — agents cannot access other clients' LORE knowledge
 
 *Unlocks: Delegate a task in Telegram, an agent executes it, result lands in knowledge base, summary in your chat.*
 
 ---
 
-### Phase 5 — Coordinated Agent Network (RELAY)
+### Phase 6 — Coordinated Agent Network (RELAY) *(was Phase 5)*
 
-Multiple specialized agents with defined roles that coordinate and delegate to each other. Human operates at strategy and review layer only.
+> **Prerequisite: Phase 5 complete + 30 days of Phase 5 audit log data.**
+
+Multiple specialized agents with defined roles that coordinate and delegate. Human operates at strategy and review layer only.
 
 - **Agent registry** — what agents exist, what they're capable of
 - **Handoff protocol** — structured context passing between agents (`relay/`)
 - **Specialized agents** — coder, researcher, analyst, writer roles
-- **Human-in-loop gates** — approval checkpoints before high-stakes actions
+- **Authenticated handoffs** — sending agent signs context payload, receiving agent verifies
+- **Runtime enforcement (Leash pattern)** — evaluate StrongDM Leash (Apache 2, eBPF, Cedar policies) for production use
+- **RELAY audit trail** — every handoff is a signed LORE event with context hash (tamper-evident chain)
 
 *Unlocks: The vision. Set direction, agents execute and coordinate, outcomes reported.*
 
@@ -238,16 +332,40 @@ Multiple specialized agents with defined roles that coordinate and delegate to e
 | Phase | Metric |
 |-------|--------|
 | 1 — Foundation | Platform doesn't fall over. All model calls routed through gateway. |
-| 2 — Knowledge | "I found that in LORE" accelerates work at least once per week. 100% of sessions auto-archived. |
-| 3 — Chief of Staff | Can delegate and get a useful response from Telegram without opening a terminal. |
-| 4 — Dispatcher | Can assign a scoped task via Telegram and receive a completed deliverable without touching a keyboard. |
-| 5 — Network | Multiple agents execute a multi-step client engagement with one human direction-setting prompt. |
+| 2 — Security Foundation | Zero unlogged tool calls. At least one block test succeeds. LiteLLM spend data persists across restarts. |
+| 3 — Knowledge | "I found that in LORE" accelerates work at least once per week. 100% of sessions auto-archived. |
+| 4 — Chief of Staff | Can delegate and get a useful response from Telegram without opening a terminal. |
+| 5 — Dispatcher | Can assign a scoped task via Telegram and receive a completed deliverable without touching a keyboard. |
+| 6 — Network | Multiple agents execute a multi-step client engagement with one human direction-setting prompt. |
+
+---
+
+## RTGF Alignment
+
+The AI Stack is the INTenX implementation of RTGF Level 3 → Level 4. Each phase maps to a maturity level:
+
+| RTGF Level | What it requires | AI Stack phase |
+|------------|-----------------|----------------|
+| Level 1 (Intentional) | 3-file starter kit, 3 practices | `AGENT_GUIDANCE.md`, `CLAUDE.md` ✅ |
+| Level 2 (Rhythmic) | Governance refresh cadence, durable/ephemeral split | LORE daily cron ✅ |
+| Level 3 (Anticipatory) | Automated gates, context governance, multi-client isolation | **Phase 2 — SENTINEL hooks + LORE security fields** |
+| Level 4 (Self-Correcting) | Governance detects its own drift, compliance mapping | Phase 5-6 + Cedar policies |
+| Level 5 (Generative) | Contributing patterns back to ecosystem | RTGF-Core publication |
+
+**The hooks audit log + LORE enhanced + LiteLLM spend data = SOC 2 control artifacts.**
+
+When a client engagement asks "what did your AI agents do during this project?":
+- **LORE** — every session conversation and decision
+- **Hooks audit log** — every tool call, block, and anomaly
+- **LiteLLM** — every model API call with cost
+- **Git history** — every file change, attributed and timestamped
 
 ---
 
 ## Open Questions
 
-1. **RAG target:** AnythingLLM still the right choice? Re-evaluate given LiteLLM decouples the backend.
+1. **RAG target:** AnythingLLM still the right choice? Re-evaluate given LiteLLM decouples the backend. Khoj (indexes `.md` files natively) is a strong alternative for Phase 3.
 2. **Dispatcher substrate:** Claude API (Anthropic SDK) vs. an agent framework (LangGraph, CrewAI)? Tradeoffs: control vs. scaffolding.
 3. **RELAY protocol:** Minimum viable handoff — file-based LORE reference, message queue, or API?
-4. **Human-in-loop gates:** For Phase 4+, what actions require explicit approval before execution?
+4. **Human-in-loop gates** *(Phase 5):* High-stakes actions requiring Telegram approval before execution: destructive file operations, git push, API calls with write access, spend > $10/session. Gate mechanism: Telegram inline keyboard confirm/deny → logged with timestamp + approver.
+5. **LiteLLM SQLite Prisma compatibility:** The `main-latest` (glibc) image should resolve the Prisma binary engine issue vs `main-stable` (wolfi). Verify on next gateway deploy.

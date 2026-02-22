@@ -1,59 +1,45 @@
 # AI Development Stack — Session Context
-**Last Updated:** 2026-02-18
+**Last Updated:** 2026-02-22
 **Updated By:** INTenX Control Center
 
 ---
 
-## 📬 Control Center Decisions — 2026-02-18
+## 📬 Control Center Decisions — 2026-02-18 (Current)
 
 *Read this first. All strategic questions from the former SAGE session are resolved.*
 
 | Topic | Decision |
 |-------|----------|
 | **Session name** | **AI Stack** (was SAGE) |
-| **Repo** | `rtgf-ai-stack` → `github.com/INTenX/rtgf-ai-stack` |
+| **Repo** | `rtgf-ai-stack` → `github.com/INTenX/rtgf-ai-stack` ✅ Created |
 | **SAGE rename** | **LORE** (Library Of Refined Evidence) — locked. Update all docs/tooling before public release. |
 | **LibreChat** | **Keep + decouple.** Keep short-term for Ollama web UI value. Route RAG through LiteLLM so backend is swappable. Do NOT build deep integrations against LibreChat's RAG API directly. |
-| **LiteLLM gateway** | **Implement now.** Priority before scaling usage further. Routes Ollama + cloud APIs, per-client cost attribution. |
-| **Observability** | **Opcode first, OTel+Grafana later.** Don't over-build for current operational tempo. |
+| **LiteLLM gateway** | ✅ **Implemented** — `gateway/` in rtgf-ai-stack. Per-client virtual keys, budget enforcement, UI at `:4000/ui`. |
+| **Observability** | **Opcode first, OTel+Grafana later.** Opcode not yet set up. |
 | **OpenClaw** | **Deprecate.** Superseded by Claude Code + Control Center + LORE + RELAY. |
-| **Security bridge tools** | Document in `rtgf-ai-stack` as **platform bridge layer** — compensating for Claude Code gaps (`/rename`, tasklist config, `resume-by-name`, `showclaude`, session index tools). Track for deprecation when Claude Code adds native support. |
+| **Security bridge tools** | Document in `rtgf-ai-stack` as **platform bridge layer** — compensating for Claude Code gaps. Track for deprecation when Claude Code adds native support. |
 
 **Your calls (low-risk, do when ready):**
-- Enable daily LORE import cron — `crontab -e`, low risk, reversible
 - SensitDev orphan detection — run the detection prompt on SensitDev WSL
-- ChatGPT/Gemini exports — import when convenient
+- ChatGPT/Gemini exports — adapters built (refactored-churning-gizmo session), import when convenient
 
 **Platform Bridge Layer — Claude Code Gap Tools** (all in `~/.local/bin/` on INTenXDev WSL):
 
 | Tool | Command | Compensates For |
 |------|---------|----------------|
-| `showclaude` | `showclaude [-t] [session-id\|--all]` | No native cross-session visibility in Claude Code — shows all sessions with task lists |
-| `rename-session-by-id` | `rename-session-by-id <id> "name"` | No native `/rename` in Claude Code — renames a session by ID prefix |
-| `resume-by-name` | `resume-by-name "AI Stack"` | No native named session resume — list sessions or resume by name |
-| `show-tasks` | `show-tasks` | Original task display tool — **superseded by `showclaude`** |
-
-These are monitoring infrastructure for the stack session. Document in `rtgf-ai-stack/scripts/` or `rtgf-ai-stack/bridge/`. Track each for deprecation when Claude Code adds native support.
-
-**Proposed `rtgf-ai-stack` repo structure:**
-```
-rtgf-ai-stack/
-├── lore/           (session archival + knowledge curation — formerly sage tools)
-├── relay/          (inter-session coordination — when built)
-├── gateway/        (LiteLLM config)
-├── observability/  (Opcode + OTel/Grafana config)
-├── compose/        (Docker compose for LibreChat and other services)
-└── scripts/        (ollama-setup.sh and shared service scripts)
-```
+| `showclaude` | `showclaude [-t] [session-id\|--all]` | No native cross-session visibility in Claude Code |
+| `rename-session-by-id` | `rename-session-by-id <id> "name"` | No native `/rename` in Claude Code |
+| `resume-by-name` | `resume-by-name "AI Stack"` | No native named session resume |
+| `show-tasks` | `show-tasks` | **Superseded by `showclaude`** |
 
 ---
 
-## Current Stack State
+## Current Stack State (2026-02-22)
 
 ### Ollama (Local Models) — Operational ✅
 - **Running on:** Windows (AMD AI Bundle), accessible from all WSL instances
 - **Setup script:** `/mnt/c/Temp/wsl-shared/ollama-setup.sh`
-- **Models installed (2026-02-18):**
+- **Models installed:**
 
 | Model | Size | Best For |
 |-------|------|----------|
@@ -66,103 +52,91 @@ rtgf-ai-stack/
 | llama3.2:3b | 2.0 GB | Fast chat |
 | gemma2:2b | 1.6 GB | Ultra-fast, simple tasks |
 
+### LiteLLM Gateway — Implemented ✅
+- **Location:** `rtgf-ai-stack/gateway/` + `rtgf-ai-stack/compose/gateway.yml`
+- **API endpoint:** `http://localhost:4000/v1` (OpenAI-compatible)
+- **UI dashboard:** `http://localhost:4000/ui`
+- **Per-client keys:** `./gateway/setup-client.sh <client-name> <monthly-budget>`
+- **Model aliases:** `local-coding`, `local-general`, `local-fast`, `local-compact`, `local-coding-fast`
+- **Cloud fallback:** local aliases fall back to `claude-sonnet-4-6` / `claude-haiku-4-5` if Ollama unavailable
+- **Status:** Built. Needs `.env` secrets filled and Docker started to activate.
+
+### Telegram Bot Interface — Built ✅
+- **Location:** `rtgf-ai-stack/interface/`
+- **Commands:** `/ask`, `/code`, `/reason`, `/fast`, `/status`, `/health`, `/lore`, `/models`, `/spend`, `/import`
+- **Multi-client:** Each Telegram group maps to a client via `config.yaml`; LiteLLM virtual key per client
+- **LORE search:** `/lore <query>` searches session archive
+- **Platform health:** `/status` runs `wsl-audit risks`, `/health` runs `wsl-audit all`
+- **Status:** Built. Needs `TELEGRAM_TOKEN` in `interface/.env` and bot created via BotFather to activate.
+
+### SENTINEL (Claude Code Hooks) — Built ✅ Phase 2
+- **Location:** `rtgf-ai-stack/hooks/`
+- **Deploy:** `bash ~/rtgf-ai-stack/hooks/install-hooks.sh`
+- **Audit log:** `~/.claude/audit/YYYY-MM-DD.jsonl`
+- **Policy:** `hooks/policy/blocked-patterns.json` (configurable block/warn rules)
+- **Config:** `~/.claude/hooks/sentinel.env` (TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
+- **Blocks:** `rm -rf`, `git reset --hard`, force push, SQL DDL drops, SSH keys, private key files
+- **Status:** Built. Run `install-hooks.sh` to activate.
+
+### wsl-audit Tool — Built ✅ (Phase 2 enhanced)
+- **Location:** `~/.local/bin/wsl-audit` + `rtgf-ai-stack/scripts/`
+- **Subcommands:** `status`, `docker`, `processes`, `compose`, `risks`, `all`, `watch [N]`, `events [N]`
+- **Phase 2 additions:** Structured JSONL event log (`~/.local/share/wsl-audit/events/`), Telegram CRIT alerts with cooldown
+- **Alert config:** `~/.local/share/wsl-audit/alert.env` (TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
+- **Key checks:** `.wslconfig` memory cap, restart policies, RestartCount, orphaned processes
+- **Mandatory governance:** Run `wsl-audit compose` before starting any new Docker service
+
+### LORE (Session Archival) — Production Ready ✅
+- **Location:** `rtgf-ai-stack/lore/` (was `~/rtgf-sage/tools/`)
+- **Status:** CLI, TUI, web dashboard functional; Claude Code adapter working
+- **Daily import cron:** ✅ Built (`lore/cron-daily-import.sh`) — needs `crontab -e` to activate
+- **Multi-platform adapters:** ✅ ChatGPT + Gemini adapters built (refactored-churning-gizmo session)
+- **Knowledge repos deployed:** 7 (1 public tools, 6 private per-client)
+- **LORE Markdown migration:** ✅ Complete — sessions stored as Markdown with frontmatter
+
 ### LibreChat — Keep + Decouple ✅ (Decision 2026-02-18)
 - **Installed on:** Ubuntu-AI-Hub WSL instance
 - **Source:** `/home/cbasta/LibreChat`
 - **UI:** `http://localhost:3080` (from Ubuntu-AI-Hub)
-- **Components:** LibreChat API, MongoDB, MeiliSearch, RAG API, pgvector
-- **Configured endpoints:** Ollama (via `host.docker.internal:11434`), OpenAI placeholder
-- **Decision:** Keep short-term for Ollama web UI value. Route RAG through LiteLLM so backend is swappable. Do NOT build deep integrations against LibreChat's RAG API directly.
+- **Decision:** Keep short-term. Route RAG through LiteLLM. No deep integrations.
 
-### Session Archival Tools (LORE) — Production Ready ✅
-- **Location:** `~/rtgf-sage/tools/`
-- **Status:** CLI, TUI, web dashboard all functional
-- **Claude Code adapter:** Working — 100+ sessions imported across production knowledge repos
-- **ChatGPT/Gemini adapters:** Pending
-- **Knowledge repos deployed:** 7 (1 public tools, 6 private per-client)
-- **Daily import cron:** Not yet enabled; set up when ready to populate
-
-### 📬 Incident — WSL/Docker Runaway (2026-02-18)
-
-**What happened:** LibreChat Docker containers configured with `restart: always` entered a restart storm. No `.wslconfig` memory cap meant no blast radius control. Positive feedback loop made the entire machine unusable.
-
-**Root causes:**
-1. `restart: always` restart policy — aggressive, no backoff, no circuit breaker
-2. Missing `.wslconfig` memory cap — no hard limit on WSL resource consumption
-3. No proactive detection tooling — discovered post-incident, not pre-empted
-
-**Resolution:** Addressed (machine recovered). Proactive tooling planned — see `wsl-audit` below.
-
-**Governance implication:** Platform-level health monitoring is a **prerequisite** to running AI services, not an afterthought. Observability order: platform health → application observability (Opcode) → full OTel.
+### Observability — Pending ⬜
+- **Decision:** Opcode first, OTel+Grafana later
+- **Action needed:** Install and configure Opcode (auto-detects `~/.claude/projects/`)
 
 ---
 
-### wsl-audit Tool — Implementation Planned ⬜
+## 📬 Incident — WSL/Docker Runaway (2026-02-18)
 
-**Purpose:** Proactive detection of WSL/Docker runaway conditions. CLI tool, on-demand.
-
-**Location:** `~/.local/bin/wsl-audit` (single bash script ~500-600 lines). Also document/version in `rtgf-ai-stack/scripts/`.
-
-**Subcommands:**
-```
-wsl-audit status     — WSL overview (distros, memory, processes, .wslconfig)
-wsl-audit docker     — Container health (states, restart loops, policies)
-wsl-audit processes  — Windows-side WSL/Docker process audit with distro mapping
-wsl-audit compose    — Compose file linter (risky patterns, missing env vars)
-wsl-audit risks      — Proactive risk detection (auto-start, missing caps, stale containers)
-wsl-audit all        — Run all checks
-wsl-audit watch [N]  — Re-run all checks every N seconds (default 30)
-```
-
-**Key technical details:**
-- No external deps — uses docker CLI `--format` templates, not jq
-- Windows-side access via `powershell.exe -NoProfile -Command '...'` from WSL
-- WSL CLI outputs UTF-16 — strip null bytes with `tr -d '\0'`
-- ANSI color with auto-detection for non-TTY (piping)
-- Graceful degradation — each check handles missing docker/powershell
-
-**Critical flags to detect:**
-- `restart: always` policy → WARN in compose linter
-- RestartCount > 3 → WARN
-- No `.wslconfig` or no memory cap → CRIT
-- Memory usage > 80% → WARN
-- Docker Desktop auto-start in Windows registry → WARN
-- Orphaned processes (parent PID no longer exists) → flag
-
-**Verification:**
-1. `wsl-audit all` — all sections produce output
-2. `wsl-audit compose /home/cbasta/LibreChat/` — flags `user: "${UID}:${GID}"` pattern
-3. `wsl-audit watch 10` — refreshes, Ctrl+C exits cleanly
-4. Stop a container, re-run `wsl-audit docker` — flags the exit
-
-**Mandatory governance artifacts (INTenX WSL instances):**
+**Resolved.** `wsl-audit` is the mitigation tool. Mandatory governance artifacts:
 - `.wslconfig` with memory cap = required before running AI services
 - No `restart: always` without `restart_policy.max_attempts` limit
 - Run `wsl-audit compose` before starting any new Docker service
 
----
-
-### Observability — Opcode First ⬜ (Decision 2026-02-18)
-- **Decision:** Opcode first, OTel+Grafana later. Don't over-build for current operational tempo.
-- **Action needed:** Install and configure Opcode (auto-detects `~/.claude/projects/`)
-
-### AI Gateway / Cost Governance — Implement Now ⬜ (Decision 2026-02-18)
-- **Decision:** LiteLLM. Priority before scaling usage further.
-- **Value:** Single gateway for Ollama local + cloud APIs; per-client cost attribution
-- **Action needed:** Implement in `rtgf-ai-stack/gateway/`
+See RTGF session context for governance pattern documentation.
 
 ---
 
-## Resolved Decisions (2026-02-18)
+## Open Work — This Session
 
-All open decisions resolved by Control Center. See decisions table at top of this file.
+| # | Task | Status | Owner |
+|---|------|--------|-------|
+| P2 | Run `install-hooks.sh` to activate SENTINEL | **Ready** | You |
+| P2 | Fill `~/.claude/hooks/sentinel.env` (Telegram token) | Pending | You |
+| P2 | Restart LiteLLM gateway (SQLite DB + verbose logging) | Pending | You |
+| P2 | Fill `~/.local/share/wsl-audit/alert.env` (wsl-audit Telegram) | Pending | You |
+| — | Fill gateway/.env and activate LiteLLM | Pending | You |
+| — | Set up Telegram bot (BotFather + .env) | Pending | You |
+| — | Install and configure Opcode observability | Pending | AI Stack session |
+| — | SensitDev orphan detection | Pending | AI Stack session |
+| — | Import ChatGPT/Gemini history | Pending (adapters ready) | When convenient |
 
-| # | Question | Resolution |
-|---|----------|------------|
-| 1 | LibreChat — keep or replace? | **Keep + decouple.** Route RAG through LiteLLM. No deep integrations. |
-| 2 | LiteLLM gateway — add? | **Implement now.** Priority before scaling. |
-| 3 | Observability platform? | **Opcode first**, OTel+Grafana later. |
-| 4 | Capability module naming? | **SAGE→LORE, RCM→CTX, ISC/AIRC→RELAY** — locked. |
+## Active Parallel Session
+
+**`refactored-churning-gizmo` (ed1c4104)** — working in `rtgf-ai-stack/` on:
+- LORE phase 2 work (cron ✅, adapters ✅, Markdown migration ✅)
+- Next: Session search CLI + RAG pipeline, RELAY design (Phase 5)
+- Do not duplicate work — check this session's tasks before starting new LORE/RELAY work
 
 ---
 
@@ -171,9 +145,8 @@ All open decisions resolved by Control Center. See decisions table at top of thi
 | Service | From Ubuntu-AI-Hub | From Other WSL | From Docker |
 |---------|-------------------|----------------|-------------|
 | Ollama API | `http://<gateway>:11434` | `http://<gateway>:11434` | `http://host.docker.internal:11434` |
+| LiteLLM Gateway | `http://localhost:4000` | `http://<hub-ip>:4000` | N/A |
 | LibreChat UI | `http://localhost:3080` | `http://<hub-ip>:3080` | N/A |
-| MeiliSearch | `http://localhost:7700` | `http://<hub-ip>:7700` | `http://meilisearch:7700` |
-| MongoDB | Internal Docker only | Internal Docker only | `mongodb://mongodb:27017` |
 
 - Gateway IP: auto-detected via `ip route show default | awk '{print $3}'`
 - Ubuntu-AI-Hub IP: `172.27.109.43` (may change on reboot)
@@ -185,3 +158,4 @@ All open decisions resolved by Control Center. See decisions table at top of thi
 - CTX module operations detail: `~/rtgf-ai-stack/lore/ctx/AGENTS.md`
 - Governance research (tool landscape, RAG options): `~/rtgf/RTGF-Governance-Research-2026-02-17.md`
 - Trademark research (SAGE rename required): `~/rtgf/RTGF-Trademark-Research-2026-02-18.md`
+- refactored-churning-gizmo LORE work: `~/rtgf-ai-stack/lore/IMPLEMENTATION_STATUS.md`

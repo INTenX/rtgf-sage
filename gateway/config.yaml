@@ -194,8 +194,9 @@ litellm_settings:
   # Redact secrets from logs
   redact_user_api_key_info: true
 
-  # Request/response logging (set to true for debugging, false for production)
-  set_verbose: false
+  # Request/response logging — enabled for Phase 2 audit trail
+  # Logs every request/response to stdout (captured by Docker). Rotated by Docker log driver.
+  set_verbose: true
 
   # Cache (optional — improves repeated prompt performance)
   # cache: true
@@ -212,17 +213,25 @@ general_settings:
   master_key: "os.environ/LITELLM_MASTER_KEY"
 
   # Database for spend tracking and virtual key storage
-  # Disabled until Prisma/wolfi engine compatibility is resolved.
-  # Re-enable by uncommenting database_url + store_model_in_db, and passing
-  # DATABASE_URL in gateway/.env.
-  # database_url: "os.environ/DATABASE_URL"
+  # Phase 2: SQLite file in named Docker volume — no external DB required.
+  # DATABASE_URL is set in compose/gateway.yml environment section.
+  #
+  # NOTE: LiteLLM uses Prisma ORM internally. If the container is a wolfi/musl
+  # image and lacks the Prisma query engine binary, DB will fail to initialize.
+  # Workaround: use ghcr.io/berriai/litellm:main-latest (glibc) or set
+  # LITELLM_LOCAL_MODEL_COST_MAP=True to skip Prisma init.
+  database_url: "os.environ/DATABASE_URL"
 
-  # Expose /spend endpoints for cost attribution queries
-  # store_model_in_db: true
+  # Store model metadata + spend in DB (required for /spend endpoints)
+  store_model_in_db: true
 
   # UI — built-in proxy dashboard (accessible at http://gateway-host:4000/ui)
   ui_access_mode: "admin_only"
 
   # Alert if spend approaches budget limits
+  # Supports: slack, webhook
+  # For Telegram: set up a webhook adapter that accepts Slack-format payloads,
+  # or use the SENTINEL hook audit + wsl-audit for alerting instead.
   # alerting: ["slack"]
-  # alerting_threshold: 0.8  # Alert at 80% of budget
+  # alerting_threshold: 0.8     # Alert at 80% of budget
+  # slack_webhook_url: "os.environ/SLACK_WEBHOOK_URL"

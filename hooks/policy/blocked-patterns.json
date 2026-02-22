@@ -1,0 +1,153 @@
+{
+  "version": "1.0",
+  "description": "SENTINEL — Claude Code hook policy. Configurable block/warn list for tool calls.",
+  "last_updated": "2026-02-22",
+
+  "bash_patterns": [
+    {
+      "id": "rm-rf",
+      "pattern": "\\brm\\b[^|]*-[rRfF]*[rR][fF]|\\brm\\b[^|]*--recursive[^|]*--force|\\brm\\b[^|]*--force[^|]*--recursive",
+      "description": "Destructive recursive delete (rm -rf)",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "git-reset-hard",
+      "pattern": "git\\s+reset\\s+--hard",
+      "description": "Hard git reset — discards all uncommitted changes",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "git-force-push",
+      "pattern": "git\\s+push\\b[^|\\n]*\\s(-f\\b|--force(?!-with-lease))",
+      "description": "Force push — can overwrite upstream history",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "git-clean-force",
+      "pattern": "git\\s+clean\\s+-[a-zA-Z]*[fF]",
+      "description": "git clean -f — destroys untracked files",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "git-checkout-destructive",
+      "pattern": "git\\s+(checkout|restore)\\s+\\.",
+      "description": "git checkout/restore . — discards all working directory changes",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "drop-ddl",
+      "pattern": "\\bDROP\\s+(TABLE|DATABASE|INDEX|SCHEMA|KEYSPACE)\\b",
+      "description": "SQL/NoSQL destructive DDL",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "device-write",
+      "pattern": ">\\s*/dev/(sd|hd|nvme|vd|xvd)[a-z]",
+      "description": "Direct block device write — would destroy disk data",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "fork-bomb",
+      "pattern": ":\\(\\)\\s*\\{.*:\\|:",
+      "description": "Fork bomb pattern",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "curl-pipe-shell",
+      "pattern": "(curl|wget)\\s+[^|]*\\|\\s*(ba?sh|sh|zsh|fish|dash)",
+      "description": "Remote code execution — curl/wget piped to shell",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "no-verify-commit",
+      "pattern": "git\\s+commit\\b[^|\\n]*--no-verify",
+      "description": "Bypass pre-commit hooks (--no-verify)",
+      "severity": "high",
+      "action": "warn"
+    },
+    {
+      "id": "kill-mass",
+      "pattern": "kill\\s+-9\\s+-1\\b|pkill\\s+(-9|-KILL)\\s+-f\\s+\\.",
+      "description": "Mass process kill",
+      "severity": "high",
+      "action": "warn"
+    }
+  ],
+
+  "path_patterns": [
+    {
+      "id": "ssh-keys",
+      "pattern": "[/~][^/]*\\.ssh/(id_[a-z]|id_[a-z]+_[a-z]+|authorized_keys|known_hosts_old)",
+      "description": "SSH private key or config access",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "system-credentials",
+      "pattern": "/etc/(passwd|shadow|sudoers|gshadow)",
+      "description": "System credential file access",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "private-key-files",
+      "pattern": "\\.(key|pem|p12|pfx|jks)$",
+      "description": "Private key or certificate file",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "aws-credentials",
+      "pattern": "\\.aws/(credentials|config)$",
+      "description": "AWS credential file access",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "claude-credentials",
+      "pattern": "\\.claude/(api_key|credentials|token)$",
+      "description": "Claude Code credential files",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "gnupg-keys",
+      "pattern": "\\.gnupg/",
+      "description": "GPG keyring access",
+      "severity": "critical",
+      "action": "block"
+    },
+    {
+      "id": "env-production",
+      "pattern": "\\.env\\.(production|prod|staging|secret|live)$",
+      "description": "Production environment/secret file",
+      "severity": "high",
+      "action": "warn"
+    },
+    {
+      "id": "env-file",
+      "pattern": "(^|/)(?!.*example)(?!.*sample)\\.env$",
+      "description": ".env file access (may contain secrets — logged for audit)",
+      "severity": "medium",
+      "action": "warn"
+    }
+  ],
+
+  "notes": [
+    "action=block: tool call is blocked, Claude sees reason, Telegram alert sent to SENTINEL channel",
+    "action=warn:  tool call is allowed, event logged with elevated severity, no alert",
+    "Pattern matching: bash_patterns match against the 'command' field of Bash tool calls",
+    "Pattern matching: path_patterns match against file_path/path fields of Read/Write/Edit/Glob",
+    "To temporarily allow a blocked operation: use install-hooks.sh --disable, do the work, re-enable",
+    "To add an allow-list entry for a specific path: add a path_patterns entry with action=allow above the blocking pattern"
+  ]
+}

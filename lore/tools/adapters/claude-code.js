@@ -235,6 +235,16 @@ export function convertClaudeCodeToCanonical(jsonlPath, options = {}) {
         current: options.flowState || 'hypothesis',
         quality_score: null,
       },
+
+      // Phase 2: Security fields — audit trail and client isolation
+      security: {
+        client: options.client || 'intenx',
+        access_level: options.accessLevel || 'internal',
+        data_classification: options.dataClassification || 'normal',
+        adverse_events: options.adverseEvents || [],
+        tool_calls_blocked: options.toolCallsBlocked || 0,
+        cost_usd: options.costUsd || null,
+      },
     },
 
     messages: messages,
@@ -255,6 +265,8 @@ export function convertClaudeCodeToCanonical(jsonlPath, options = {}) {
 export function canonicalToMarkdown(canonical) {
   const { session, messages } = canonical;
 
+  const sec = session.security || {};
+
   const frontmatter = {
     id: session.id,
     title: session.metadata.title,
@@ -270,6 +282,13 @@ export function canonicalToMarkdown(canonical) {
     git_branch: session.metadata.git_context?.branch || '',
     git_repo: session.metadata.git_context?.repo || '',
     message_count: messages.length,
+    // Phase 2: Security fields
+    client: sec.client || 'intenx',
+    access_level: sec.access_level || 'internal',
+    data_classification: sec.data_classification || 'normal',
+    adverse_events: sec.adverse_events || [],
+    tool_calls_blocked: sec.tool_calls_blocked || 0,
+    cost_usd: sec.cost_usd !== undefined ? sec.cost_usd : null,
   };
 
   const fm = yaml.dump(frontmatter, { lineWidth: -1, noRefs: true });

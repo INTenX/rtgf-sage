@@ -39,13 +39,103 @@ WARN_COUNT=0
 DOCKER_AVAILABLE=false
 POWERSHELL_AVAILABLE=false
 
-crit() { echo -e "${RED}${BOLD}[CRIT]${RESET} $*"; CRIT_COUNT=$((CRIT_COUNT + 1)); }
-warn() { echo -e "${YELLOW}[WARN]${RESET} $*"; WARN_COUNT=$((WARN_COUNT + 1)); }
+# ─── Structured Event Log ─────────────────────────────────────────────────────
+# Phase 2: Emit structured JSONL events alongside human-readable output.
+# Log dir: ~/.local/share/wsl-audit/events/YYYY-MM-DD.jsonl
+# No external deps (no jq/python) — JSON built with printf + sed escaping.
+
+EVENT_LOG_DIR="${HOME}/.local/share/wsl-audit/events"
+EVENT_LOG_FILE="${EVENT_LOG_DIR}/$(date -u '+%Y-%m-%d').jsonl"
+CURRENT_SECTION=""
+
+# Telegram alerting for CRIT events (optional — gracefully degrades if unset)
+# Set these in ~/.local/share/wsl-audit/alert.env:
+#   TELEGRAM_TOKEN=...
+#   TELEGRAM_CHAT_ID=...
+TELEGRAM_TOKEN="${TELEGRAM_TOKEN:-}"
+TELEGRAM_CHAT_ID="${TELEGRAM_CHAT_ID:-}"
+ALERT_ENV_FILE="${HOME}/.local/share/wsl-audit/alert.env"
+if [[ -f "$ALERT_ENV_FILE" ]]; then
+    # shellcheck source=/dev/null
+    source "$ALERT_ENV_FILE" 2>/dev/null || true
+fi
+
+# Cooldown: suppress repeated CRIT Telegram alerts for same message (1h window)
+ALERT_COOLDOWN_DIR="${HOME}/.local/share/wsl-audit/.cooldown"
+
+_json_escape() {
+    # Escape string for safe inclusion as a JSON string value (no external deps)
+    printf '%s' "$1" | tr '\n\r\t' '   ' | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+_emit_event() {
+    local severity="$1"
+    local section="$2"
+    local message="$3"
+    local ts
+    ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    local esc_msg esc_sec esc_host esc_distro
+    esc_msg="$(_json_escape "$message")"
+    esc_sec="$(_json_escape "$section")"
+    esc_host="$(_json_escape "$(hostname 2>/dev/null || echo 'unknown')")"
+    esc_distro="$(_json_escape "${WSL_DISTRO_NAME:-unknown}")"
+
+    mkdir -p "$EVENT_LOG_DIR" 2>/dev/null || true
+    printf '{"ts":"%s","severity":"%s","section":"%s","message":"%s","host":"%s","distro":"%s"}\n' \
+        "$ts" "$severity" "$esc_sec" "$esc_msg" "$esc_host" "$esc_distro" \
+        >> "$EVENT_LOG_FILE" 2>/dev/null || true
+}
+
+_send_telegram_alert() {
+    local message="$1"
+    [[ -z "${TELEGRAM_TOKEN}" || -z "${TELEGRAM_CHAT_ID}" ]] && return 0
+    ! command -v curl &>/dev/null && return 0
+
+    # Cooldown check: don't re-alert same message within 1 hour
+    local cooldown_key
+    cooldown_key="$(printf '%s' "$message" | tr -dc 'a-zA-Z0-9' | head -c 32)"
+    mkdir -p "$ALERT_COOLDOWN_DIR" 2>/dev/null || true
+    local cooldown_file="${ALERT_COOLDOWN_DIR}/${cooldown_key}"
+    if [[ -f "$cooldown_file" ]]; then
+        local last_alert
+        last_alert="$(cat "$cooldown_file" 2>/dev/null || echo 0)"
+        local now
+        now="$(date +%s)"
+        if (( now - last_alert < 3600 )); then
+            return 0  # Still in cooldown window
+        fi
+    fi
+    date +%s > "$cooldown_file" 2>/dev/null || true
+
+    curl -s -X POST \
+        "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+        -d "chat_id=${TELEGRAM_CHAT_ID}" \
+        --data-urlencode "text=🚨 wsl-audit CRIT
+${message}
+Host: $(hostname) | Distro: ${WSL_DISTRO_NAME:-unknown}" \
+        --max-time 5 \
+        -o /dev/null 2>/dev/null || true
+}
+
+crit() {
+    echo -e "${RED}${BOLD}[CRIT]${RESET} $*"
+    CRIT_COUNT=$((CRIT_COUNT + 1))
+    _emit_event "crit" "$CURRENT_SECTION" "$*"
+    _send_telegram_alert "$*"
+}
+
+warn() {
+    echo -e "${YELLOW}[WARN]${RESET} $*"
+    WARN_COUNT=$((WARN_COUNT + 1))
+    _emit_event "warn" "$CURRENT_SECTION" "$*"
+}
+
 ok()   { echo -e "${GREEN}[ OK ]${RESET} $*"; }
 info() { echo -e "${CYAN}[INFO]${RESET} $*"; }
 dim()  { echo -e "${DIM}$*${RESET}"; }
 
 section() {
+    CURRENT_SECTION="$*"
     echo ""
     echo -e "${BOLD}${CYAN}━━━ $* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 }
@@ -70,7 +160,20 @@ summary() {
     if [[ $CRIT_COUNT -eq 0 && $WARN_COUNT -eq 0 ]]; then
         echo -e "  ${GREEN}${BOLD}All checks passed — platform looks healthy${RESET}"
     fi
+    if [[ -f "$EVENT_LOG_FILE" ]]; then
+        dim "  Event log: $EVENT_LOG_FILE"
+    fi
     echo ""
+
+    # Emit structured run summary event
+    local ts
+    ts="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    mkdir -p "$EVENT_LOG_DIR" 2>/dev/null || true
+    printf '{"ts":"%s","severity":"info","section":"summary","message":"audit_run_complete","crit_count":%d,"warn_count":%d,"host":"%s","distro":"%s"}\n' \
+        "$ts" "$CRIT_COUNT" "$WARN_COUNT" \
+        "$(hostname 2>/dev/null || echo 'unknown')" \
+        "${WSL_DISTRO_NAME:-unknown}" \
+        >> "$EVENT_LOG_FILE" 2>/dev/null || true
 }
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -589,6 +692,61 @@ cmd_watch() {
     done
 }
 
+# ─── Subcommand: events ───────────────────────────────────────────────────────
+
+cmd_events() {
+    local n="${1:-20}"
+    local log_dir="$EVENT_LOG_DIR"
+
+    section "Event Log — Last ${n} Entries"
+
+    if [[ ! -d "$log_dir" ]]; then
+        info "No event log directory found: $log_dir"
+        info "Run 'wsl-audit all' first to generate events"
+        return
+    fi
+
+    # Find most recent log files
+    local log_files=()
+    while IFS= read -r f; do
+        log_files+=("$f")
+    done < <(ls -t "${log_dir}/"*.jsonl 2>/dev/null | head -7)
+
+    if [[ ${#log_files[@]} -eq 0 ]]; then
+        info "No event log files found in $log_dir"
+        return
+    fi
+
+    info "Log directory: $log_dir"
+    info "Files: ${log_files[*]}"
+
+    # Show recent entries from most recent file, crits/warns highlighted
+    local entry_count=0
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        entry_count=$((entry_count + 1))
+        if echo "$line" | grep -q '"severity":"crit"'; then
+            echo -e "${RED}${BOLD}$line${RESET}"
+        elif echo "$line" | grep -q '"severity":"warn"'; then
+            echo -e "${YELLOW}$line${RESET}"
+        else
+            dim "$line"
+        fi
+    done < <(tail -n "$n" "${log_files[0]}" 2>/dev/null)
+
+    if [[ $entry_count -eq 0 ]]; then
+        info "No entries in most recent log file: ${log_files[0]}"
+    fi
+
+    echo ""
+    info "All log files:"
+    for f in "${log_files[@]}"; do
+        local count
+        count=$(wc -l < "$f" 2>/dev/null || echo "?")
+        dim "  $f  ($count entries)"
+    done
+}
+
 # ─── Subcommand: help ─────────────────────────────────────────────────────────
 
 cmd_help() {
@@ -607,6 +765,8 @@ COMMANDS:
     risks                Proactive risk detection (auto-start, missing caps, storms)
     all [path]           Run all checks (pass compose path for linter)
     watch [N]            Re-run all checks every N seconds (default: 30)
+    events [N]           Show last N structured event log entries (default: 20)
+                         Log: ~/.local/share/wsl-audit/events/YYYY-MM-DD.jsonl
 
 SEVERITY LEVELS:
     [CRIT]  Requires immediate attention — platform safety risk
@@ -622,12 +782,18 @@ CRITICAL PATTERNS DETECTED:
     - Docker Desktop in Windows auto-start
     - Currently restarting containers
 
+TELEGRAM ALERTING (Phase 2):
+    Set TELEGRAM_TOKEN and TELEGRAM_CHAT_ID in:
+    ~/.local/share/wsl-audit/alert.env
+    CRIT events trigger Telegram alerts with 1-hour cooldown per message.
+
 EXAMPLES:
     wsl-audit all                          Run full check
     wsl-audit compose ~/LibreChat/         Lint LibreChat compose files
     wsl-audit watch 60                     Monitor, refresh every 60s
     wsl-audit docker                       Quick container health check
     wsl-audit risks                        Proactive risk summary only
+    wsl-audit events 50                    Show last 50 log entries
 
 GOVERNANCE (INTenX WSL instances):
     - .wslconfig with memory= cap is REQUIRED before running AI services
@@ -655,6 +821,7 @@ main() {
         risks)     cmd_risks ;;
         all)       cmd_all "${1:-}" ;;
         watch)     cmd_watch "${1:-30}" ;;
+        events)    cmd_events "${1:-20}" ;;
         help|--help|-h) cmd_help ;;
         *)
             echo "Unknown command: $cmd" >&2
