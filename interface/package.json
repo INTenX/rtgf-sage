@@ -1,7 +1,7 @@
 {
   "name": "rtgf-interface",
   "version": "0.1.0",
-  "description": "Telegram interface for rtgf-ai-stack — routes to LiteLLM gateway, runs stack tools, searches LORE",
+  "description": "Telegram interface for rtgf-ai-stack — routes to LiteLLM gateway, runs stack tools, searches CHRONICLE",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js",

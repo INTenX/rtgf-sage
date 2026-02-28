@@ -10,31 +10,31 @@ Monorepo for the AI development stack — local model infrastructure, session ar
 
 ```
 rtgf-ai-stack/
-├── lore/           — Session archival + knowledge curation (LORE)
+├── chronicle/      — Session archival + knowledge curation (CHRONICLE)
 ├── gateway/        — LiteLLM config (Ollama routing, cost attribution)
 ├── interface/      — Telegram bot (rtgf-interface)
-├── hooks/          — SENTINEL Claude Code security hooks
+├── hooks/          — WARD Claude Code security hooks
 ├── observability/  — Opcode + OTel/Grafana config
 ├── compose/        — Docker Compose (LibreChat, gateway)
 ├── scripts/        — Shared service scripts (ollama-setup.sh, wsl-audit)
-└── relay/          — Inter-session coordination (RELAY — planned)
+└── baton/          — Inter-session coordination (BATON — planned)
 ```
 
 ---
 
 ## Components
 
-### LORE — Library Of Refined Evidence (`lore/`)
+### CHRONICLE — Session Archive and Knowledge Curation (`chronicle/`)
 Git-native LLM conversation archival and knowledge flow management.
 - Agent-agnostic session import (Claude Code, ChatGPT, Gemini)
 - Knowledge Flow states: `hypothesis → codified → validated → promoted`
 - Per-client isolation via separate knowledge repos
-- Tools: `lore/tools/cli/` — import, export, flow, sync, query, orphan detection
-- Gemini → LibreChat importer: `lore/tools/cli/gemini-librechat-import.py`
+- Tools: `chronicle/tools/cli/` — import, export, flow, sync, query, orphan detection
+- Gemini → LibreChat importer: `chronicle/tools/cli/gemini-librechat-import.py`
 
 **Status:** ✅ Production — Claude Code archival operational, 100+ sessions. Gemini importer built.
 
-See [`lore/README.md`](lore/README.md) for usage.
+See [`chronicle/README.md`](chronicle/README.md) for usage.
 
 ---
 
@@ -53,11 +53,11 @@ Telegram bot providing conversational access to the AI stack via LiteLLM gateway
 - `interface/bot.js` — main bot entry point
 - Routes to LiteLLM gateway for model selection
 
-**Status:** ✅ Built. Conversation history and LORE context injection pending.
+**Status:** ✅ Built. Conversation history and CHRONICLE context injection pending.
 
 ---
 
-### SENTINEL — Claude Code Security Hooks (`hooks/`)
+### WARD — Claude Code Security Hooks (`hooks/`)
 Defense-in-depth security layer for Claude Code sessions.
 - `pre-tool-use.sh` — blocks dangerous patterns (rm -rf, credential access, cross-client paths, unreviewed force pushes)
 - `post-tool-use.sh` — audit logging to `~/.claude/audit/YYYY-MM-DD.jsonl`
@@ -99,7 +99,7 @@ Shared operational scripts across all WSL instances.
 
 ---
 
-### RELAY (`relay/`)
+### BATON (`baton/`)
 Inter-session coordination — agent registry, handoff protocol, specialized agent roles.
 
 **Status:** ⬜ Planned.
@@ -112,9 +112,9 @@ Inter-session coordination — agent registry, handoff protocol, specialized age
 |-------|------|-----------|--------|
 | 1 | Kernel | eBPF syscall enforcement (Tetragon/Leash) | ⬜ Planned |
 | 2 | Container | Docker isolation + Cedar policies | ⬜ Planned |
-| 3 | Application | SENTINEL Claude Code hooks | ✅ Built |
+| 3 | Application | WARD Claude Code hooks | ✅ Built |
 | 4 | Gateway | LiteLLM routing + cost controls | ✅ Deployed |
-| 5 | Archive | LORE session archival + audit trail | ✅ Production |
+| 5 | Archive | CHRONICLE session archival + audit trail | ✅ Production |
 | 6 | Governance | AGaC overlays, human-in-loop gates | ⬜ Planned |
 
 ---

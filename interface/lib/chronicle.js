@@ -4,10 +4,10 @@ const fs = require('fs')
 const path = require('path')
 const { execSync } = require('child_process')
 
-const ARCHIVE_ROOT = () => process.env.LORE_ARCHIVE
-  ?? path.join(__dirname, '../../lore/ctx/archive/canonical')
+const ARCHIVE_ROOT = () => process.env.CHRONICLE_ARCHIVE
+  ?? path.join(__dirname, '../../chronicle/ctx/archive/canonical')
 
-// Simple keyword search over LORE canonical YAML archive.
+// Simple keyword search over CHRONICLE canonical YAML archive.
 // Searches session titles, summaries, and tags.
 // Returns up to maxResults matching sessions as plain text summaries.
 //

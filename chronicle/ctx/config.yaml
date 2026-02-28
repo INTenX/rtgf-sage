@@ -1,5 +1,5 @@
-# CTX Module Configuration
-# Context Management for RTGF framework (part of LORE)
+# SCOPE Module Configuration
+# Context Scope Management for RTGF framework (part of CHRONICLE)
 
 module:
   name: ctx

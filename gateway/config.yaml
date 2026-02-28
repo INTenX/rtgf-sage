@@ -231,7 +231,7 @@ general_settings:
   # Alert if spend approaches budget limits
   # Supports: slack, webhook
   # For Telegram: set up a webhook adapter that accepts Slack-format payloads,
-  # or use the SENTINEL hook audit + wsl-audit for alerting instead.
+  # or use the WARD hook audit + wsl-audit for alerting instead.
   # alerting: ["slack"]
   # alerting_threshold: 0.8     # Alert at 80% of budget
   # slack_webhook_url: "os.environ/SLACK_WEBHOOK_URL"

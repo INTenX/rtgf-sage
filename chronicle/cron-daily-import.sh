@@ -1,20 +1,20 @@
 #!/bin/bash
-# Daily import cron job for LORE
+# Daily import cron job for CHRONICLE
 # Runs at 2am daily, imports previous day's sessions
 #
 # Installation:
 #   crontab -e
-#   Add: 0 2 * * * /home/cbasta/rtgf-ai-stack/lore/cron-daily-import.sh
+#   Add: 0 2 * * * /home/cbasta/rtgf-ai-stack/chronicle/cron-daily-import.sh
 
 set -e
 
-LORE_ROOT="/home/cbasta/rtgf-ai-stack/lore"
+CHRONICLE_ROOT="/home/cbasta/rtgf-ai-stack/chronicle"
 CLAUDE_PROJECTS="$HOME/.claude/projects"
-LOG_FILE="$HOME/logs/lore-import-$(date +%Y-%m-%d).log"
+LOG_FILE="$HOME/logs/chronicle-import-$(date +%Y-%m-%d).log"
 
 mkdir -p "$HOME/logs"
 
-echo "=== LORE Daily Import ===" | tee -a "$LOG_FILE"
+echo "=== CHRONICLE Daily Import ===" | tee -a "$LOG_FILE"
 echo "Date: $(date)" | tee -a "$LOG_FILE"
 echo | tee -a "$LOG_FILE"
 
@@ -30,7 +30,7 @@ import_recent_sessions() {
   while IFS= read -r session; do
     echo "  $(basename "$session")" | tee -a "$LOG_FILE"
 
-    if node "$LORE_ROOT/tools/cli/rcm-import.js" \
+    if node "$CHRONICLE_ROOT/tools/cli/rcm-import.js" \
       --source "$session" \
       --platform claude-code \
       --target "$target_repo" >> "$LOG_FILE" 2>&1; then
@@ -64,7 +64,7 @@ for repo in intenx-knowledge makanui-knowledge test-knowledge; do
     cd "$repo_path"
     if ! git diff --quiet HEAD 2>/dev/null || git status --short | grep -q '^[?A]'; then
       git add -A rcm/
-      git commit -m "chore(lore): Daily import $(date +%Y-%m-%d)" || true
+      git commit -m "chore(chronicle): Daily import $(date +%Y-%m-%d)" || true
       git push || true
     fi
   fi

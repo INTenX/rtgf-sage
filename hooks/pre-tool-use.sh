@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SENTINEL — PreToolUse Hook
+# WARD — PreToolUse Hook
 # rtgf-ai-stack/hooks/pre-tool-use.sh → deployed to ~/.claude/hooks/pre-tool-use.sh
 #
 # Intercepts every Claude Code tool call before execution.
@@ -8,7 +8,7 @@
 # Exit 0 = allow  |  Exit 2 = block (stdout becomes Claude's block reason)
 #
 # Audit log: ~/.claude/audit/YYYY-MM-DD.jsonl
-# Config:    ~/.claude/hooks/sentinel.env  (TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
+# Config:    ~/.claude/hooks/ward.env  (TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
 # Policy:    ~/.claude/hooks/policy/blocked-patterns.json
 #
 # Input (stdin): JSON with session_id, tool_name, tool_input, cwd
@@ -24,9 +24,9 @@ POLICY_FILE="${HOOK_DIR}/policy/blocked-patterns.json"
 # Load optional Telegram config
 TELEGRAM_TOKEN=""
 TELEGRAM_CHAT_ID=""
-if [[ -f "${HOOK_DIR}/sentinel.env" ]]; then
+if [[ -f "${HOOK_DIR}/ward.env" ]]; then
     # shellcheck source=/dev/null
-    source "${HOOK_DIR}/sentinel.env" 2>/dev/null || true
+    source "${HOOK_DIR}/ward.env" 2>/dev/null || true
 fi
 
 mkdir -p "${AUDIT_DIR}"
@@ -152,7 +152,7 @@ if block_reason and telegram_token and telegram_chat:
 
     input_preview = str(tool_input)[:200]
     msg = (
-        f"\u26a0\ufe0f SENTINEL BLOCK\n"
+        f"\u26a0\ufe0f WARD BLOCK\n"
         f"Rule:    {block_id}\n"
         f"Reason:  {block_reason}\n"
         f"Tool:    {tool_name}\n"
@@ -169,7 +169,7 @@ if block_reason and telegram_token and telegram_chat:
 
 # ── Exit ──────────────────────────────────────────────────────────────────────
 if block_reason:
-    print(f"SENTINEL blocked: {block_reason} [{block_id}]")
+    print(f"WARD blocked: {block_reason} [{block_id}]")
     print(f"To allow this in a legitimate context: check ~/.claude/hooks/policy/blocked-patterns.json")
     sys.exit(2)
 

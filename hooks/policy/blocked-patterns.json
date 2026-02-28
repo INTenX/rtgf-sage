@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "description": "SENTINEL — Claude Code hook policy. Configurable block/warn list for tool calls.",
+  "description": "WARD — Claude Code hook policy. Configurable block/warn list for tool calls.",
   "last_updated": "2026-02-22",
 
   "bash_patterns": [
@@ -143,7 +143,7 @@
   ],
 
   "notes": [
-    "action=block: tool call is blocked, Claude sees reason, Telegram alert sent to SENTINEL channel",
+    "action=block: tool call is blocked, Claude sees reason, Telegram alert sent to WARD channel",
     "action=warn:  tool call is allowed, event logged with elevated severity, no alert",
     "Pattern matching: bash_patterns match against the 'command' field of Bash tool calls",
     "Pattern matching: path_patterns match against file_path/path fields of Read/Write/Edit/Glob",

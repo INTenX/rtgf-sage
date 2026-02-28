@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SENTINEL — PostToolUse Hook
+# WARD — PostToolUse Hook
 # rtgf-ai-stack/hooks/post-tool-use.sh → deployed to ~/.claude/hooks/post-tool-use.sh
 #
 # Logs tool outcomes to the daily audit log.

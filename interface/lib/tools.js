@@ -45,7 +45,7 @@ async function ollamaModels() {
   return data.models?.map(m => `• ${m.name}  (${(m.size / 1e9).toFixed(1)}GB)`) ?? []
 }
 
-// Run LORE import for a given session file or all pending
+// Run CHRONICLE import for a given session file or all pending
 function loreImport(target = '') {
   try {
     const cmd = target
@@ -54,7 +54,7 @@ function loreImport(target = '') {
     return execSync(cmd, {
       encoding: 'utf8',
       timeout: 60000,
-      cwd: path.join(STACK_ROOT, 'lore')
+      cwd: path.join(STACK_ROOT, 'chronicle')
     })
   } catch (err) {
     return err.stdout || err.message

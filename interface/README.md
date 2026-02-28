@@ -1,7 +1,7 @@
 # rtgf-interface — Telegram Bot
 
 Telegram interface for the INTenX AI stack. Routes messages to LiteLLM gateway,
-runs stack tools, searches LORE, enforces per-chat client isolation.
+runs stack tools, searches CHRONICLE, enforces per-chat client isolation.
 
 ## Setup (10 minutes)
 
@@ -40,11 +40,11 @@ npm start
 | `/health` | Full platform audit | — |
 | `/models` | List available models | — |
 | `/model <name>` | Switch model for this session | — |
-| `/lore <query>` | Search LORE session archive | — |
+| `/chronicle <query>` | Search CHRONICLE session archive | — |
 | `/whoami` | Show chat ID and config | — |
 | `/spend` | Team spend summary (admin) | — |
 | `/pull <model>` | Trigger Ollama pull (admin) | — |
-| `/import` | Run LORE session import (admin) | — |
+| `/import` | Run CHRONICLE session import (admin) | — |
 
 Private chat: any non-command message routes to the active model.
 Group chat: only explicit commands work (prevents noise).
@@ -104,6 +104,6 @@ interface/
 └── lib/
     ├── config.js   — Config loading and chat resolution
     ├── gateway.js  — LiteLLM API client
-    ├── lore.js     — LORE archive search
+    ├── chronicle.js — CHRONICLE archive search
     └── tools.js    — CLI tool runners (wsl-audit, Ollama, etc.)
 ```

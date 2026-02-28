@@ -144,10 +144,10 @@ Login with your `LITELLM_MASTER_KEY`. Shows:
 
 ## Attribution for Subscription Tools
 
-Claude Code (Pro) and Codex CLI bypass the gateway. Attribution for these tools uses LORE session metadata:
+Claude Code (Pro) and Codex CLI bypass the gateway. Attribution for these tools uses CHRONICLE session metadata:
 - Working directory → client identification
 - Session duration/count → capacity proxy for invoicing
-- See: `lore/ctx/AGENTS.md` for session tagging patterns
+- See: `chronicle/ctx/AGENTS.md` for session tagging patterns
 
 When/if switching Claude Code to API billing, route through this gateway for full per-session token attribution (LiteLLM has a Claude Code integration guide).
 

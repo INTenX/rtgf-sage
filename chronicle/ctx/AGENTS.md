@@ -1,13 +1,13 @@
-# CTX - AI Agent Discovery Instructions
+# SCOPE - AI Agent Discovery Instructions
 
-**Module:** Runtime Context Management (CTX)
+**Module:** Context Scope Management (SCOPE)
 **Discovery Path:** Deterministic, non-inferential
 
 ---
 
 ## Purpose
 
-This file provides AI agents (Claude, ChatGPT, Gemini, etc.) with explicit instructions for discovering, importing, managing, and exporting LLM conversation sessions within the CTX framework.
+This file provides AI agents (Claude, ChatGPT, Gemini, etc.) with explicit instructions for discovering, importing, managing, and exporting LLM conversation sessions within the SCOPE framework.
 
 ---
 
@@ -505,6 +505,6 @@ After mastering basic CTX operations:
 
 ## See Also
 
-- **README.md** - CTX module contract and architecture
+- **README.md** - SCOPE module contract and architecture
 - **schemas/canonical-v1.yaml** - Session schema definition
-- **config.yaml** - CTX configuration reference
+- **config.yaml** - SCOPE configuration reference

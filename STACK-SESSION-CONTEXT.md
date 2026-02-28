@@ -12,11 +12,11 @@
 |-------|----------|
 | **Session name** | **AI Stack** (was SAGE) |
 | **Repo** | `rtgf-ai-stack` → `github.com/INTenX/rtgf-ai-stack` ✅ Created |
-| **SAGE rename** | **LORE** (Library Of Refined Evidence) — locked. Update all docs/tooling before public release. |
+| **SAGE rename** | **CHRONICLE** (Session Archive and Knowledge Curation) — locked. Update all docs/tooling before public release. |
 | **LibreChat** | **Keep + decouple.** Keep short-term for Ollama web UI value. Route RAG through LiteLLM so backend is swappable. Do NOT build deep integrations against LibreChat's RAG API directly. |
 | **LiteLLM gateway** | ✅ **Implemented** — `gateway/` in rtgf-ai-stack. Per-client virtual keys, budget enforcement, UI at `:4000/ui`. |
 | **Observability** | **Opcode first, OTel+Grafana later.** Opcode not yet set up. |
-| **OpenClaw** | **Deprecate.** Superseded by Claude Code + Control Center + LORE + RELAY. |
+| **OpenClaw** | **Deprecate.** Superseded by Claude Code + Control Center + CHRONICLE + BATON. |
 | **Security bridge tools** | Document in `rtgf-ai-stack` as **platform bridge layer** — compensating for Claude Code gaps. Track for deprecation when Claude Code adds native support. |
 
 **Your calls (low-risk, do when ready):**
@@ -63,20 +63,20 @@
 
 ### Telegram Bot Interface — Built ✅
 - **Location:** `rtgf-ai-stack/interface/`
-- **Commands:** `/ask`, `/code`, `/reason`, `/fast`, `/status`, `/health`, `/lore`, `/models`, `/spend`, `/import`
+- **Commands:** `/ask`, `/code`, `/reason`, `/fast`, `/status`, `/health`, `/chronicle`, `/models`, `/spend`, `/import`
 - **Multi-client:** Each Telegram group maps to a client via `config.yaml`; LiteLLM virtual key per client
-- **LORE search:** `/lore <query>` searches session archive
+- **CHRONICLE search:** `/chronicle <query>` searches session archive
 - **Platform health:** `/status` runs `wsl-audit risks`, `/health` runs `wsl-audit all`
 - **Status:** Built. Needs `TELEGRAM_TOKEN` in `interface/.env` and bot created via BotFather to activate.
 
-### SENTINEL (Claude Code Hooks) — Built ✅ Phase 2
+### WARD (Claude Code Hooks) — Built ✅ Phase 2
 - **Location:** `rtgf-ai-stack/hooks/`
 - **Deploy:** `bash ~/rtgf-ai-stack/hooks/install-hooks.sh`
 - **Audit log:** `~/.claude/audit/YYYY-MM-DD.jsonl`
 - **Policy:** `hooks/policy/blocked-patterns.json` (configurable block/warn rules)
-- **Config:** `~/.claude/hooks/sentinel.env` (TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
+- **Config:** `~/.claude/hooks/ward.env` (TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
 - **Blocks:** `rm -rf`, `git reset --hard`, force push, SQL DDL drops, SSH keys, private key files
-- **Status:** Built. Run `install-hooks.sh` to activate.
+- **Status:** Built. Run `install-hooks.sh` to activate. (Note: rename `sentinel.env` → `ward.env` if previously installed)
 
 ### wsl-audit Tool — Built ✅ (Phase 2 enhanced)
 - **Location:** `~/.local/bin/wsl-audit` + `rtgf-ai-stack/scripts/`
@@ -86,13 +86,13 @@
 - **Key checks:** `.wslconfig` memory cap, restart policies, RestartCount, orphaned processes
 - **Mandatory governance:** Run `wsl-audit compose` before starting any new Docker service
 
-### LORE (Session Archival) — Production Ready ✅
-- **Location:** `rtgf-ai-stack/lore/` (was `~/rtgf-sage/tools/`)
+### CHRONICLE (Session Archival) — Production Ready ✅
+- **Location:** `rtgf-ai-stack/chronicle/` (was `~/rtgf-sage/tools/`)
 - **Status:** CLI, TUI, web dashboard functional; Claude Code adapter working
-- **Daily import cron:** ✅ Built (`lore/cron-daily-import.sh`) — needs `crontab -e` to activate
+- **Daily import cron:** ✅ Built (`chronicle/cron-daily-import.sh`) — needs `crontab -e` to activate
 - **Multi-platform adapters:** ✅ ChatGPT + Gemini adapters built (refactored-churning-gizmo session)
 - **Knowledge repos deployed:** 7 (1 public tools, 6 private per-client)
-- **LORE Markdown migration:** ✅ Complete — sessions stored as Markdown with frontmatter
+- **CHRONICLE Markdown migration:** ✅ Complete — sessions stored as Markdown with frontmatter
 
 ### LibreChat — Keep + Decouple ✅ (Decision 2026-02-18)
 - **Installed on:** Ubuntu-AI-Hub WSL instance
@@ -117,26 +117,20 @@ See RTGF session context for governance pattern documentation.
 
 ---
 
-## Open Work — This Session
+## Open Work
 
-| # | Task | Status | Owner |
-|---|------|--------|-------|
-| P2 | Run `install-hooks.sh` to activate SENTINEL | **Ready** | You |
-| P2 | Fill `~/.claude/hooks/sentinel.env` (Telegram token) | Pending | You |
-| P2 | Restart LiteLLM gateway (SQLite DB + verbose logging) | Pending | You |
-| P2 | Fill `~/.local/share/wsl-audit/alert.env` (wsl-audit Telegram) | Pending | You |
-| — | Fill gateway/.env and activate LiteLLM | Pending | You |
-| — | Set up Telegram bot (BotFather + .env) | Pending | You |
-| — | Install and configure Opcode observability | Pending | AI Stack session |
-| — | SensitDev orphan detection | Pending | AI Stack session |
-| — | Import ChatGPT/Gemini history | Pending (adapters ready) | When convenient |
+Tracked in Claude Code task list (`/tasks`). Key items:
+- Activate WARD: `bash ~/rtgf-ai-stack/hooks/install-hooks.sh`
+- Fill Telegram credentials in `ward.env` and `wsl-audit/alert.env`
+- Restart LiteLLM gateway (Phase 2: SQLite + verbose)
+- Fill `gateway/.env`, set up Telegram bot, install Opcode
 
 ## Active Parallel Session
 
 **`refactored-churning-gizmo` (ed1c4104)** — working in `rtgf-ai-stack/` on:
-- LORE phase 2 work (cron ✅, adapters ✅, Markdown migration ✅)
-- Next: Session search CLI + RAG pipeline, RELAY design (Phase 5)
-- Do not duplicate work — check this session's tasks before starting new LORE/RELAY work
+- CHRONICLE phase 2 work (cron ✅, adapters ✅, Markdown migration ✅)
+- Next: Session search CLI + RAG pipeline, BATON design (Phase 5)
+- Do not duplicate work — check this session's tasks before starting new CHRONICLE/BATON work
 
 ---
 
@@ -154,8 +148,8 @@ See RTGF session context for governance pattern documentation.
 ---
 
 ## Prior Work Reference
-- Full LORE development history: `~/rtgf-ai-stack/lore/SESSION_CONTEXT_2026-02-11.md`
-- CTX module operations detail: `~/rtgf-ai-stack/lore/ctx/AGENTS.md`
+- Full CHRONICLE development history: `~/rtgf-ai-stack/chronicle/SESSION_CONTEXT_2026-02-11.md`
+- SCOPE module operations detail: `~/rtgf-ai-stack/chronicle/ctx/AGENTS.md`
 - Governance research (tool landscape, RAG options): `~/rtgf/RTGF-Governance-Research-2026-02-17.md`
 - Trademark research (SAGE rename required): `~/rtgf/RTGF-Trademark-Research-2026-02-18.md`
-- refactored-churning-gizmo LORE work: `~/rtgf-ai-stack/lore/IMPLEMENTATION_STATUS.md`
+- refactored-churning-gizmo CHRONICLE work: `~/rtgf-ai-stack/chronicle/IMPLEMENTATION_STATUS.md`

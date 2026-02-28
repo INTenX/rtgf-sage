@@ -1,10 +1,10 @@
-# CTX - Context Management
+# SCOPE - Context Scope Management
 
 **RTGF Module Contract**
 
 ## Purpose
 
-CTX (Context Management) treats LLM conversations as version-controlled knowledge artifacts. It enables agent-agnostic session archival, cross-platform conversation management, and git-native knowledge flow curation.
+SCOPE (Context Scope Management) treats LLM conversations as version-controlled knowledge artifacts. It enables agent-agnostic session archival, cross-platform conversation management, and git-native knowledge flow curation.
 
 ## Problem
 

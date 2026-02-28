@@ -15,7 +15,7 @@
 #
 # Output:
 #   Team ID and virtual key for the client.
-#   Add the virtual key to LORE session metadata for cost attribution.
+#   Add the virtual key to CHRONICLE session metadata for cost attribution.
 #   Route all programmatic API calls through the gateway using the virtual key.
 
 set -euo pipefail
@@ -146,5 +146,5 @@ EOF
 
 echo "  Key saved to: $KEY_FILE (not committed)"
 echo ""
-echo "LORE session tagging:"
+echo "CHRONICLE session tagging:"
 echo "  Add client=$CLIENT_NAME to session metadata for attribution"

@@ -1,4 +1,4 @@
-# LORE - Library Of Refined Evidence
+# CHRONICLE - Session Archive and Knowledge Curation
 
 **Git-Native LLM Conversation Management for RTGF**
 
@@ -11,7 +11,7 @@ Status: Production-Ready
 
 ## Overview
 
-LORE treats LLM conversations as version-controlled knowledge artifacts. Built on the CTX (Context Management) module, it provides agent-agnostic session archival, cross-platform conversation management, and git-native knowledge flow curation.
+CHRONICLE treats LLM conversations as version-controlled knowledge artifacts. Built on the SCOPE (Context Scope Management) module, it provides agent-agnostic session archival, cross-platform conversation management, and git-native knowledge flow curation.
 
 **Problem:** LLM conversations scattered across platforms (Claude Code, ChatGPT, Gemini) with no unified archival, versioning, or reuse strategy.
 
@@ -25,7 +25,7 @@ LORE treats LLM conversations as version-controlled knowledge artifacts. Built o
 
 ```bash
 git clone https://github.com/INTenX/rtgf-ai-stack.git
-cd rtgf-ai-stack/lore
+cd rtgf-ai-stack/chronicle
 npm install
 npm link  # Make CLI tools globally available
 ```

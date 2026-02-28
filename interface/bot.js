@@ -6,7 +6,7 @@ const TelegramBot = require('node-telegram-bot-api')
 const cron = require('node-cron')
 const { loadConfig, chatConfig, isAdmin, modelForCommand } = require('./lib/config')
 const { ask, listModels, spendSummary } = require('./lib/gateway')
-const { searchLore } = require('./lib/lore')
+const { searchLore } = require('./lib/chronicle')
 const { wslAudit, pullModel, ollamaModels, loreImport } = require('./lib/tools')
 
 // ─── Startup ──────────────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ bot.onText(/\/start|\/help/, async (msg) => {
 *Admin:*
 /spend — LiteLLM spend by team
 /pull <model> — Trigger Ollama model pull
-/import — Run LORE session import` : ''
+/import — Run CHRONICLE session import` : ''
 
   await send(chatId, `*rtgf-interface* — INTenX AI Stack
 Client: ${cfg?.client ?? 'personal'} | Model: \`${model}\`
@@ -85,7 +85,7 @@ Client: ${cfg?.client ?? 'personal'} | Model: \`${model}\`
 /status — Platform health (wsl-audit risks)
 /health — Full platform audit (wsl-audit all)
 /models — Available models
-/lore <query> — Search LORE session archive
+/chronicle <query> — Search CHRONICLE session archive
 
 *Settings:*
 /model <name> — Switch active model for this chat
@@ -203,20 +203,20 @@ bot.onText(/\/models/, async (msg) => {
   }
 })
 
-bot.onText(/\/lore(?:\s+(.+))?/, async (msg, match) => {
+bot.onText(/\/chronicle(?:\s+(.+))?/, async (msg, match) => {
   const chatId = msg.chat.id
   const query = match[1]?.trim()
   if (!query) {
-    await send(chatId, 'Usage: /lore <search query>')
+    await send(chatId, 'Usage: /chronicle <search query>')
     return
   }
   await bot.sendChatAction(chatId, 'typing')
   const results = searchLore(query)
   if (!results) {
-    await send(chatId, `No LORE sessions found matching: ${query}`)
+    await send(chatId, `No CHRONICLE sessions found matching: ${query}`)
     return
   }
-  await send(chatId, `*LORE sessions matching "${query}":*\n${results}`)
+  await send(chatId, `*CHRONICLE sessions matching "${query}":*\n${results}`)
 })
 
 // ── Admin commands ────────────────────────────────────────────────────────────

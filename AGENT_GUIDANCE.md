@@ -54,23 +54,23 @@ source /mnt/c/Temp/wsl-shared/ollama-setup.sh --bashrc
 
 **Full service reference:** `/mnt/c/Temp/wsl-shared/CONTEXT.md`
 
-### Session Archival Tools (LORE)
+### Session Archival Tools (CHRONICLE)
 ```bash
 # Import a Claude Code session to knowledge repo
-node ~/rtgf-ai-stack/lore/tools/cli/rcm-import.js \
+node ~/rtgf-ai-stack/chronicle/tools/cli/rcm-import.js \
   --source ~/.claude/projects/-home-cbasta/SESSION_ID.jsonl \
   --platform claude-code \
   --target /home/cbasta/intenx-knowledge/
 
 # Browse sessions (web dashboard)
-node ~/rtgf-ai-stack/lore/tools/web/server.js /home/cbasta/intenx-knowledge/ 3000
+node ~/rtgf-ai-stack/chronicle/tools/web/server.js /home/cbasta/intenx-knowledge/ 3000
 
 # Promote session through knowledge flow states
-node ~/rtgf-ai-stack/lore/tools/cli/rcm-flow.js promote \
+node ~/rtgf-ai-stack/chronicle/tools/cli/rcm-flow.js promote \
   --session SESSION_ID --to codified --tags "topic,discipline"
 
 # Find orphaned sessions not yet imported
-node ~/rtgf-ai-stack/lore/tools/cli/rcm-find-orphans.js \
+node ~/rtgf-ai-stack/chronicle/tools/cli/rcm-find-orphans.js \
   --target /home/cbasta/intenx-knowledge/ --import
 ```
 
@@ -92,8 +92,8 @@ node ~/rtgf-ai-stack/lore/tools/cli/rcm-find-orphans.js \
 - **Decision:** Keep + decouple. Route RAG through LiteLLM. No deep LibreChat integrations.
 - **Status:** Production — do not build against LibreChat RAG API directly
 
-### Session Archival Layer (LORE)
-- **Tools:** `~/rtgf-ai-stack/lore/tools/` — CLI, TUI, web dashboard
+### Session Archival Layer (CHRONICLE)
+- **Tools:** `~/rtgf-ai-stack/chronicle/tools/` — CLI, TUI, web dashboard
 - **Adapters:** Claude Code (working), ChatGPT/Gemini (pending)
 - **Knowledge repos:** 6 private per-client repos deployed on GitHub (INTenX org)
 - **Status:** Production-ready for Claude Code; 100+ sessions imported
@@ -116,7 +116,7 @@ node ~/rtgf-ai-stack/lore/tools/cli/rcm-find-orphans.js \
 - Budget and cost governance policy decisions
 - Cross-client infrastructure changes (affects all WSL instances)
 - New WSL instance setup or service deployment
-- Locked names: SAGE→LORE, RCM→CTX, ISC/AIRC→RELAY
+- Locked names: SAGE→CHRONICLE, RCM→SCOPE, ISC/AIRC→BATON
 
 ---
 
@@ -146,4 +146,4 @@ node ~/rtgf-ai-stack/lore/tools/cli/rcm-find-orphans.js \
 - Session context (current state, decisions): `~/rtgf-ai-stack/STACK-SESSION-CONTEXT.md`
 - Control Center memory: `~/.claude/projects/-home-cbasta/memory/MEMORY.md`
 - RTGF governance research: `~/rtgf/RTGF-Governance-Research-2026-02-17.md`
-- CTX module operations: `~/rtgf-ai-stack/lore/ctx/AGENTS.md`
+- SCOPE module operations: `~/rtgf-ai-stack/chronicle/ctx/AGENTS.md`

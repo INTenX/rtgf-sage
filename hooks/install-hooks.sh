@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# install-hooks.sh — Deploy SENTINEL hooks to ~/.claude/hooks/
+# install-hooks.sh — Deploy WARD hooks to ~/.claude/hooks/
 # Part of rtgf-ai-stack Phase 2: Security Foundation
 #
 # What this does:
 #   1. Creates ~/.claude/hooks/ and ~/.claude/audit/ with correct permissions
 #   2. Copies pre-tool-use.sh and post-tool-use.sh from repo
 #   3. Copies policy/blocked-patterns.json
-#   4. Creates ~/.claude/hooks/sentinel.env from example (if not already present)
+#   4. Creates ~/.claude/hooks/ward.env from example (if not already present)
 #   5. Registers PreToolUse + PostToolUse hooks in ~/.claude/settings.json
 #
 # Usage:
@@ -15,7 +15,7 @@
 #   bash ~/rtgf-ai-stack/hooks/install-hooks.sh --disable
 #
 # After install:
-#   Fill in ~/.claude/hooks/sentinel.env with TELEGRAM_TOKEN + TELEGRAM_CHAT_ID
+#   Fill in ~/.claude/hooks/ward.env with TELEGRAM_TOKEN + TELEGRAM_CHAT_ID
 #   Start a Claude Code session — check ~/.claude/audit/YYYY-MM-DD.jsonl
 
 set -uo pipefail
@@ -44,7 +44,7 @@ info() { echo -e "  --  $*"; }
 step() { echo -e "\n${BOLD}$*${RESET}"; }
 
 echo ""
-echo -e "${BOLD}SENTINEL Hook Installer — rtgf-ai-stack${RESET}"
+echo -e "${BOLD}WARD Hook Installer — rtgf-ai-stack${RESET}"
 echo "Source:  ${HOOKS_SRC}"
 echo "Dest:    ${HOOKS_DEST}"
 echo "Config:  ${SETTINGS}"
@@ -53,7 +53,7 @@ $DISABLE && echo -e "${YELLOW}DISABLE mode — removing hook registrations${RESE
 
 # ── Disable mode: remove hook registrations ───────────────────────────────────
 if $DISABLE; then
-    step "Removing SENTINEL hooks from settings.json"
+    step "Removing WARD hooks from settings.json"
     python3 - "$SETTINGS" <<'PYEOF'
 import json, sys, os
 
@@ -76,7 +76,7 @@ for event in ("PreToolUse", "PostToolUse"):
         original = hooks[event]
         hooks[event] = [
             h for h in original
-            if not any("sentinel" in str(hh.get("command", "")).lower()
+            if not any("ward" in str(hh.get("command", "")).lower()
                        or "pre-tool-use" in str(hh.get("command", ""))
                        or "post-tool-use" in str(hh.get("command", ""))
                        for hh in h.get("hooks", []))
@@ -88,10 +88,10 @@ with open(settings_path, "w") as f:
     json.dump(settings, f, indent=2)
     f.write("\n")
 
-print(f"[ OK ] Removed {removed} SENTINEL hook registration(s) from {settings_path}")
+print(f"[ OK ] Removed {removed} WARD hook registration(s) from {settings_path}")
 PYEOF
     echo ""
-    echo "SENTINEL hooks disabled. Re-run without --disable to re-enable."
+    echo "WARD hooks disabled. Re-run without --disable to re-enable."
     exit 0
 fi
 
@@ -139,10 +139,10 @@ else
     warn "Policy file not found: $policy_src"
 fi
 
-# ── Create sentinel.env if not present ───────────────────────────────────────
-step "Checking sentinel.env"
-sentinel_env="${HOOKS_DEST}/sentinel.env"
-example_env="${HOOKS_SRC}/sentinel.env.example"
+# ── Create ward.env if not present ───────────────────────────────────────────
+step "Checking ward.env"
+sentinel_env="${HOOKS_DEST}/ward.env"
+example_env="${HOOKS_SRC}/ward.env.example"
 if [[ ! -f "$sentinel_env" ]]; then
     if $DRY_RUN; then
         info "Would create from example: $sentinel_env"
@@ -150,7 +150,7 @@ if [[ ! -f "$sentinel_env" ]]; then
         if [[ -f "$example_env" ]]; then
             cp "$example_env" "$sentinel_env"
         else
-            printf '# SENTINEL Hook Configuration\nTELEGRAM_TOKEN=\nTELEGRAM_CHAT_ID=\n' > "$sentinel_env"
+            printf '# WARD Hook Configuration\nTELEGRAM_TOKEN=\nTELEGRAM_CHAT_ID=\n' > "$sentinel_env"
         fi
         chmod 600 "$sentinel_env"
     fi
@@ -160,7 +160,7 @@ else
     ok "Exists:  $sentinel_env"
     # Check if values are filled in
     if grep -qE '^TELEGRAM_TOKEN=$' "$sentinel_env" 2>/dev/null; then
-        warn "TELEGRAM_TOKEN not set in sentinel.env — blocks will be logged but not alerted"
+        warn "TELEGRAM_TOKEN not set in ward.env — blocks will be logged but not alerted"
     fi
 fi
 
@@ -203,10 +203,10 @@ if os.path.exists(settings_path):
 
 existing_hooks = settings.get("hooks", {})
 
-# Merge: keep non-SENTINEL hooks, replace/add SENTINEL hooks
+# Merge: keep non-WARD hooks, replace/add WARD hooks
 for event in ("PreToolUse", "PostToolUse"):
     existing = existing_hooks.get(event, [])
-    # Remove any existing SENTINEL hook entries to avoid duplicates
+    # Remove any existing WARD hook entries to avoid duplicates
     filtered = [
         h for h in existing
         if not any(
@@ -234,7 +234,7 @@ echo ""
 echo -e "${BOLD}Installation complete.${RESET}"
 echo ""
 echo "Next steps:"
-echo "  1. Fill in Telegram config: ${HOOKS_DEST}/sentinel.env"
+echo "  1. Fill in Telegram config: ${HOOKS_DEST}/ward.env"
 echo "  2. Start a new Claude Code session (hooks activate on next session)"
 echo "  3. Check audit log: ${AUDIT_DIR}/$(date -u '+%Y-%m-%d').jsonl"
 echo "  4. Test a block: ask Claude to run 'cat /etc/passwd' — should be blocked"
