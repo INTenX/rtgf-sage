@@ -18,7 +18,7 @@ services:
     # main-stable uses wolfi/musl which lacks the Prisma query engine binary.
     image: ghcr.io/berriai/litellm:main-latest
     container_name: litellm-gateway
-    restart: on-failure:5
+    restart: unless-stopped
     ports:
       - "4000:4000"
     volumes:
