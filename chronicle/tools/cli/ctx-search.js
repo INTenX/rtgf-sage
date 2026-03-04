@@ -229,7 +229,11 @@ async function pushToMeili(repos) {
 
   // Create or update index with filterable/sortable attributes
   const index = client.index(MEILI_INDEX_NAME);
-  await client.createIndex(MEILI_INDEX_NAME, { primaryKey: 'path' }).catch(() => {});
+  // Create index if missing; if it already exists update the primary key via settings
+  await client.createIndex(MEILI_INDEX_NAME, { primaryKey: 'doc_id' }).catch(async () => {
+    // Index exists — update primary key explicitly
+    await index.update({ primaryKey: 'doc_id' }).catch(() => {});
+  });
   await index.updateSettings({
     searchableAttributes: ['title', 'summary', 'tags_str', 'content'],
     filterableAttributes: ['flow_state', 'platform', 'repo', 'client', 'date'],
@@ -237,24 +241,32 @@ async function pushToMeili(repos) {
     rankingRules: ['words', 'typo', 'proximity', 'attribute', 'sort', 'exactness'],
   });
 
-  // Push in batches of 50 (MeiliSearch handles large content fine, but batching is polite)
+  // MeiliSearch requires primary key to be alphanumeric + hyphens + underscores only.
+  // Use session_id (UUID) when present; otherwise derive a stable ID from the path.
+  function makeDocId(session) {
+    if (session.session_id && /^[0-9a-f-]{36}$/.test(session.session_id)) {
+      return session.session_id;
+    }
+    // Stable hash of path: replace non-alphanumeric with underscores, truncate
+    return session.path.replace(/[^a-zA-Z0-9-]/g, '_').slice(-120);
+  }
+
+  // Push in batches of 50
   const batchSize = 50;
   let pushed = 0;
+  let lastTaskUid;
   for (let i = 0; i < sessions.length; i += batchSize) {
-    const batch = sessions.slice(i, i + batchSize);
-    await index.addDocuments(batch);
+    const batch = sessions.slice(i, i + batchSize).map(s => ({ ...s, doc_id: makeDocId(s) }));
+    const task = await index.addDocuments(batch);
+    lastTaskUid = task.taskUid;
     pushed += batch.length;
     process.stderr.write(`\rIndexing into MeiliSearch... ${pushed}/${sessions.length}`);
   }
   process.stderr.write('\n');
 
-  // Wait for indexing task to complete
-  const tasks = await index.getTasks({ status: ['enqueued', 'processing'] });
-  if (tasks.results.length > 0) {
-    process.stderr.write('Waiting for MeiliSearch to finish indexing...');
-    await index.waitForTask(tasks.results[0].uid, { timeOutMs: 30000 });
-    process.stderr.write(' done.\n');
-  }
+  process.stderr.write('Waiting for MeiliSearch to finish indexing...');
+  await client.tasks.waitForTask(lastTaskUid, { timeOutMs: 30000 });
+  process.stderr.write(' done.\n');
 
   console.log(`\nMeiliSearch index '${MEILI_INDEX_NAME}' updated.`);
   console.log(`  URL: ${MEILI_URL}`);
