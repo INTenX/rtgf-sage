@@ -1,7 +1,7 @@
 {
-  "name": "rtgf-lore",
+  "name": "rtgf-chronicle",
   "version": "0.1.0",
-  "description": "LORE - Library Of Refined Evidence. Git-native LLM conversation archival for RTGF framework",
+  "description": "CHRONICLE - Session Archive and Knowledge Curation. Git-native LLM conversation archival for RTGF framework",
   "type": "module",
   "main": "index.js",
   "bin": {
@@ -22,7 +22,7 @@
     "session-archival",
     "git-native",
     "rtgf",
-    "lore",
+    "chronicle",
     "ctx",
     "claude",
     "chatgpt",
