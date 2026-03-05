@@ -27,5 +27,6 @@ Thumbs.db
 # Build outputs
 dist/
 build/
+site/
 interface/.env
 interface/.chat-history.json

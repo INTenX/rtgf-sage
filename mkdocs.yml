@@ -1,0 +1,81 @@
+site_name: RTGF AI Stack
+site_description: INTenX AI Development Stack — Session archival, model routing, security, and coordination
+site_author: INTenX
+repo_url: https://github.com/INTenX/rtgf-ai-stack
+repo_name: INTenX/rtgf-ai-stack
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: cyan
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: deep purple
+      accent: cyan
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+extra_javascript:
+  - https://unpkg.com/mermaid@11/dist/mermaid.min.js
+
+nav:
+  - Home: index.md
+  - Architecture:
+    - Overview: architecture/overview.md
+    - Memory Model: architecture/memory-model.md
+    - Security Layers: architecture/security-layers.md
+    - Network Topology: architecture/network-topology.md
+  - Components:
+    - CHRONICLE: components/chronicle.md
+    - LiteLLM Gateway: components/gateway.md
+    - Telegram Interface: components/interface.md
+    - WARD (Hooks): components/ward.md
+    - wsl-audit: components/wsl-audit.md
+    - BATON (Planned): components/baton.md
+  - Operations:
+    - Quick Start: operations/quick-start.md
+    - Service Management: operations/services.md
+    - Model Reference: operations/models.md
+  - Development:
+    - Roadmap: development/roadmap.md
+    - Knowledge Flow: development/knowledge-flow.md
