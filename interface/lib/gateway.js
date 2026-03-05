@@ -16,14 +16,17 @@ function clientFor(chatId) {
   })
 }
 
-// Send a prompt to the gateway, return the response text
-async function ask(chatId, model, prompt, systemPrompt = null) {
+// Send a prompt to the gateway, return the response text.
+// `history` is an optional array of {role, content} messages (prior turns).
+async function ask(chatId, model, prompt, { systemPrompt = null, history = [] } = {}) {
   const client = clientFor(chatId)
 
   const messages = []
   if (systemPrompt) {
     messages.push({ role: 'system', content: systemPrompt })
   }
+  // Inject prior conversation turns, then the new user message
+  messages.push(...history)
   messages.push({ role: 'user', content: prompt })
 
   try {

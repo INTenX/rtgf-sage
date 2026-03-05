@@ -2,12 +2,35 @@
 
 require('dotenv').config()
 
+const fs = require('fs')
+const path = require('path')
 const TelegramBot = require('node-telegram-bot-api')
 const cron = require('node-cron')
 const { loadConfig, chatConfig, isAdmin, modelForCommand } = require('./lib/config')
 const { ask, listModels, spendSummary } = require('./lib/gateway')
 const { searchLore } = require('./lib/chronicle')
 const { wslAudit, pullModel, ollamaModels, loreImport } = require('./lib/tools')
+
+// ─── History persistence ──────────────────────────────────────────────────────
+
+const HISTORY_FILE = path.join(__dirname, '.chat-history.json')
+const MAX_HISTORY_TURNS = 20  // keep last N user+assistant pairs (40 messages)
+
+function loadHistory() {
+  try {
+    return JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf8'))
+  } catch {
+    return {}
+  }
+}
+
+function saveHistory(allHistory) {
+  try {
+    fs.writeFileSync(HISTORY_FILE, JSON.stringify(allHistory, null, 2))
+  } catch (err) {
+    console.error('Failed to save chat history:', err.message)
+  }
+}
 
 // ─── Startup ──────────────────────────────────────────────────────────────────
 
@@ -22,11 +45,30 @@ const bot = new TelegramBot(TOKEN, { polling: true })
 
 // Per-chat runtime state (model overrides, conversation history)
 const chatState = {}
+const persistedHistory = loadHistory()
 
 function getState(chatId) {
   const id = String(chatId)
-  if (!chatState[id]) chatState[id] = { model: null, history: [] }
+  if (!chatState[id]) {
+    chatState[id] = {
+      model: null,
+      history: persistedHistory[id] ?? []
+    }
+  }
   return chatState[id]
+}
+
+function appendAndPersist(chatId, userMsg, assistantMsg) {
+  const id = String(chatId)
+  const state = getState(chatId)
+  state.history.push({ role: 'user', content: userMsg })
+  state.history.push({ role: 'assistant', content: assistantMsg })
+  // Trim to rolling window (each turn = 2 messages)
+  if (state.history.length > MAX_HISTORY_TURNS * 2) {
+    state.history = state.history.slice(-MAX_HISTORY_TURNS * 2)
+  }
+  persistedHistory[id] = state.history
+  saveHistory(persistedHistory)
 }
 
 console.log('rtgf-interface starting — polling Telegram...')
@@ -90,6 +132,7 @@ Client: ${cfg?.client ?? 'personal'} | Model: \`${model}\`
 *Settings:*
 /model <name> — Switch active model for this chat
 /model — Show current model
+/clear — Clear conversation history
 /whoami — Show your chat ID and config
 ${adminCommands}`)
 })
@@ -120,6 +163,17 @@ bot.onText(/\/model(?:\s+(.+))?/, async (msg, match) => {
   await send(chatId, `Model set to \`${requested}\` for this session.`)
 })
 
+// ── Conversation history management ───────────────────────────────────────────
+
+bot.onText(/\/clear/, async (msg) => {
+  const chatId = msg.chat.id
+  const id = String(chatId)
+  if (chatState[id]) chatState[id].history = []
+  delete persistedHistory[id]
+  saveHistory(persistedHistory)
+  await send(chatId, 'Conversation history cleared.')
+})
+
 // ── AI queries ────────────────────────────────────────────────────────────────
 
 async function handleAsk(msg, prompt, model) {
@@ -130,7 +184,9 @@ async function handleAsk(msg, prompt, model) {
   }
   await bot.sendChatAction(chatId, 'typing')
   try {
-    const response = await ask(chatId, model, prompt)
+    const state = getState(chatId)
+    const response = await ask(chatId, model, prompt, { history: state.history })
+    appendAndPersist(chatId, prompt, response)
     await send(chatId, response)
   } catch (err) {
     await send(chatId, `Error: ${err.message}`)
@@ -161,7 +217,9 @@ bot.on('message', async (msg) => {
   const chatId = msg.chat.id
   await bot.sendChatAction(chatId, 'typing')
   try {
-    const response = await ask(chatId, activeModel(chatId), msg.text)
+    const state = getState(chatId)
+    const response = await ask(chatId, activeModel(chatId), msg.text, { history: state.history })
+    appendAndPersist(chatId, msg.text, response)
     await send(chatId, response)
   } catch (err) {
     await send(chatId, `Error: ${err.message}`)

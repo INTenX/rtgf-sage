@@ -28,3 +28,4 @@ Thumbs.db
 dist/
 build/
 interface/.env
+interface/.chat-history.json
