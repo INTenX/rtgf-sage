@@ -62,6 +62,12 @@ scheduled:
     args: ["risks"]
     label: "Morning platform health"
 
+  - name: ward-digest
+    cron: "5 7 * * *"        # 7:05am daily (just after daily-health)
+    chat_id: default
+    command: ward-digest
+    label: "WARD security digest"
+
   # - name: weekly-spend
   #   cron: "0 9 * * 1"      # 9am Monday
   #   chat_id: default

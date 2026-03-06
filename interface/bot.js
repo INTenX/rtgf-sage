@@ -9,7 +9,7 @@ const cron = require('node-cron')
 const { loadConfig, chatConfig, isAdmin, modelForCommand } = require('./lib/config')
 const { ask, listModels, spendSummary } = require('./lib/gateway')
 const { searchLore, getContextForPrompt } = require('./lib/chronicle')
-const { wslAudit, pullModel, ollamaModels, loreImport } = require('./lib/tools')
+const { wslAudit, pullModel, ollamaModels, loreImport, wardDigest } = require('./lib/tools')
 
 // ─── History persistence ──────────────────────────────────────────────────────
 
@@ -112,7 +112,8 @@ bot.onText(/\/start|\/help/, async (msg) => {
 *Admin:*
 /spend — LiteLLM spend by team
 /pull <model> — Trigger Ollama model pull
-/import — Run CHRONICLE session import` : ''
+/import — Run CHRONICLE session import
+/ward [YYYY-MM-DD] — WARD security event digest (yesterday by default)` : ''
 
   await send(chatId, `*rtgf-interface* — INTenX AI Stack
 Client: ${cfg?.client ?? 'personal'} | Model: \`${model}\`
@@ -254,6 +255,17 @@ bot.onText(/\/health/, async (msg) => {
   await send(chatId, `\`\`\`\n${output}\n\`\`\``)
 })
 
+bot.onText(/\/ward(?:\s+(\d{4}-\d{2}-\d{2}))?/, async (msg, match) => {
+  const chatId = msg.chat.id
+  if (!isAdmin(chatId)) {
+    await send(chatId, 'Admin only.')
+    return
+  }
+  await bot.sendChatAction(chatId, 'typing')
+  const date = match[1]?.trim() ?? null  // optional YYYY-MM-DD, defaults to yesterday
+  await send(chatId, wardDigest(date))
+})
+
 bot.onText(/\/models/, async (msg) => {
   const chatId = msg.chat.id
   await bot.sendChatAction(chatId, 'typing')
@@ -374,6 +386,11 @@ for (const job of scheduledJobs) {
         output = data?.map(t =>
           `${t.team_alias ?? t.team_id}: $${(t.spend ?? 0).toFixed(4)}`
         ).join('\n') ?? 'No data'
+      } else if (job.command === 'ward-digest') {
+        const date = (job.args ?? [])[0] ?? null  // optional override date
+        output = wardDigest(date)
+        await send(chatId, output)
+        return  // already sent, skip the code-block wrapper below
       } else {
         output = `Unknown scheduled command: ${job.command}`
       }

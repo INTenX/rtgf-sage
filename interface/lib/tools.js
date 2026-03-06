@@ -65,4 +65,66 @@ function loreImport(target = '') {
   }
 }
 
-module.exports = { wslAudit, pullModel, ollamaModels, loreImport }
+// Summarise yesterday's WARD audit log
+// Returns a formatted string for Telegram
+function wardDigest(date = null) {
+  const fs = require('fs')
+  const os = require('os')
+
+  const target = date ?? (() => {
+    const d = new Date()
+    d.setDate(d.getDate() - 1)
+    return d.toISOString().slice(0, 10)
+  })()
+
+  const logPath = `${os.homedir()}/.claude/audit/${target}.jsonl`
+
+  let total = 0, blocked = 0, warned = 0
+  const blockCounts = {}
+  const warnCounts = {}
+
+  try {
+    const lines = fs.readFileSync(logPath, 'utf8').split('\n').filter(Boolean)
+    for (const line of lines) {
+      try {
+        const obj = JSON.parse(line)
+        if (obj.event !== 'pre_tool_use') continue
+        total++
+        if (obj.blocked) {
+          blocked++
+          const id = obj.block_id ?? 'unknown'
+          blockCounts[id] = (blockCounts[id] ?? 0) + 1
+        } else if (obj.severity === 'warn') {
+          warned++
+          const id = obj.block_id ?? 'warn'
+          warnCounts[id] = (warnCounts[id] ?? 0) + 1
+        }
+      } catch { /* skip malformed lines */ }
+    }
+  } catch {
+    return `No WARD audit log found for ${target}.`
+  }
+
+  const lines = [`*WARD Audit — ${target}*`, `Tool calls: ${total}`]
+
+  if (blocked === 0 && warned === 0) {
+    lines.push('✅ Clean — no blocks or warnings')
+  } else {
+    if (blocked > 0) {
+      lines.push(`🚫 Blocked: ${blocked}`)
+      for (const [id, n] of Object.entries(blockCounts)) {
+        lines.push(`  • ${id}: ${n}`)
+      }
+    }
+    if (warned > 0) {
+      lines.push(`⚠️ Warned: ${warned}`)
+      for (const [id, n] of Object.entries(warnCounts)) {
+        lines.push(`  • ${id}: ${n}`)
+      }
+    }
+  }
+
+  return lines.join('\n')
+}
+
+module.exports = { wslAudit, pullModel, ollamaModels, loreImport, wardDigest }
