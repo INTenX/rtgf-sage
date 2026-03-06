@@ -76,11 +76,11 @@ graph TB
 |-----------|--------|----------|
 | **Ollama** (local models) | ✅ Operational | Windows/AMD, all WSL |
 | **CHRONICLE** (session archival) | ✅ Production | `chronicle/` |
-| **LiteLLM Gateway** | ✅ Deployed | Ubuntu-AI-Hub `:4000` |
+| **LiteLLM Gateway** | ✅ Deployed | AI Hub WSL `:4000` |
 | **Telegram Interface** | ✅ Running | `interface/` → systemd |
 | **WARD** (Claude Code hooks) | ✅ Built | `hooks/` |
 | **wsl-audit** | ✅ Built | `~/.local/bin/wsl-audit` |
-| **LibreChat** | ✅ Keep + decouple | Ubuntu-AI-Hub `:3080` |
+| **LibreChat** | ✅ Keep + decouple | AI Hub WSL `:3080` |
 | **BATON** (inter-session) | ⬜ Planned | `baton/` |
 
 ---
@@ -88,7 +88,7 @@ graph TB
 ## Quick Facts
 
 - **Repo:** `github.com/INTenX/rtgf-ai-stack`
-- **Primary WSL:** `INTenXDev` (ColeWork), `Ubuntu-AI-Hub`
+- **WSL layout:** Dev WSL (primary dev + bot) + AI Hub WSL (gateway host)
 - **Gateway:** `http://10.5.0.2:4000` (auto-discovered)
 - **Ollama:** Windows AMD RX 7600S, accessible from all WSL
 - **Knowledge repos:** 7 deployed (intenx, sensit, makanui, ratio11, beaglebone, test + tools)

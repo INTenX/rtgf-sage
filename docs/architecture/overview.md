@@ -8,9 +8,9 @@ The RTGF AI Stack is a layered infrastructure for AI-first consulting operations
 graph LR
     subgraph WSL_Instances["WSL Instances"]
         direction TB
-        CW["INTenXDev (ColeWork)\nPrimary dev + Claude Code"]
-        HUB["Ubuntu-AI-Hub\nGateway + LibreChat"]
-        SD["SensitDev\nClient isolation"]
+        CW["Dev WSL\nPrimary dev + Claude Code"]
+        HUB["AI Hub WSL\nGateway + LibreChat"]
+        SD["Client WSL\nClient isolation"]
     end
 
     subgraph Windows["Windows Host"]
@@ -79,9 +79,9 @@ Every Claude Code tool call passes through hooks:
 ```mermaid
 graph TD
     WIN["Windows Host\nOllama :11434"]
-    HUB["Ubuntu-AI-Hub\n172.27.x.x\nLiteLLM :4000\nLibreChat :3080"]
-    CW["INTenXDev (ColeWork)\n172.27.x.x"]
-    SD["SensitDev\n172.27.x.x"]
+    HUB["AI Hub WSL\n172.27.x.x\nLiteLLM :4000\nLibreChat :3080"]
+    CW["Dev WSL\n172.27.x.x"]
+    SD["Client WSL\n172.27.x.x"]
 
     WIN <-->|"WSL NAT bridge\nhost.docker.internal"| HUB
     WIN <-->|"WSL NAT bridge"| CW

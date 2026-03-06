@@ -9,7 +9,7 @@ BATON enables AI agents and sessions to hand off context, tasks, and results to 
 
 ```mermaid
 flowchart LR
-    subgraph Session_A["Session A (INTenXDev)"]
+    subgraph Session_A["Session A (Dev WSL)"]
         A_AGENT["Claude Code\nAgent A"]
         A_OUT["Task result\n+ context summary"]
     end
@@ -20,7 +20,7 @@ flowchart LR
         QUEUE["Task Queue\n(Redis / file)"]
     end
 
-    subgraph Session_B["Session B (SensitDev)"]
+    subgraph Session_B["Session B (Client WSL)"]
         B_AGENT["Claude Code\nAgent B"]
         B_IN["Resume context\n+ task assignment"]
     end
@@ -44,11 +44,11 @@ flowchart LR
   "created_at": "2026-03-05T14:22:01Z",
   "from": {
     "session_id": "abc123",
-    "wsl_instance": "INTenXDev",
+    "wsl_instance": "dev-wsl",
     "agent": "claude-code"
   },
   "to": {
-    "wsl_instance": "SensitDev",
+    "wsl_instance": "client-wsl",
     "agent": "claude-code",
     "routing_hint": "sensit-client-work"
   },

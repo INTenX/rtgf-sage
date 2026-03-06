@@ -8,13 +8,13 @@ graph LR
         OL["Ollama\nWindows process"]
     end
 
-    subgraph HUB["Ubuntu-AI-Hub (Docker)"]
+    subgraph HUB["AI Hub WSL (Docker — gateway host)"]
         GW["litellm\ndocker compose"]
         PG["litellm-db\nPostgreSQL"]
         LC["librechat\ndocker compose"]
     end
 
-    subgraph CW["INTenXDev (systemd)"]
+    subgraph CW["Dev WSL (systemd)"]
         BOT["rtgf-interface\nsystemd --user"]
     end
 
@@ -23,7 +23,7 @@ graph LR
     BOT -->|"polls gateway"| GW
 ```
 
-## Telegram Bot (INTenXDev)
+## Telegram Bot (Dev WSL)
 
 ```bash
 # Status
@@ -39,7 +39,7 @@ systemctl --user restart rtgf-interface
 systemctl --user stop rtgf-interface
 ```
 
-## LiteLLM Gateway (Ubuntu-AI-Hub)
+## LiteLLM Gateway (AI Hub WSL)
 
 ```bash
 cd ~/rtgf-ai-stack
@@ -60,7 +60,7 @@ docker compose -f compose/gateway.yml down -v
 docker compose -f compose/gateway.yml logs -f litellm
 ```
 
-## LibreChat (Ubuntu-AI-Hub)
+## LibreChat (AI Hub WSL)
 
 ```bash
 cd ~/LibreChat

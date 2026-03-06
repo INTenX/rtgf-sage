@@ -45,7 +45,7 @@ gantt
 
 ### ✅ Phase 2: Security Foundation
 - WARD Claude Code hooks (`hooks/`)
-- LiteLLM gateway deployed on Ubuntu-AI-Hub
+- LiteLLM gateway deployed on AI Hub WSL
 - PostgreSQL backend for spend tracking
 - wsl-audit event log + Telegram CRIT alerts
 - CHRONICLE security fields (flow_state, quality_score)
@@ -76,7 +76,7 @@ gantt
 
 | Priority | Task | Why |
 |----------|------|-----|
-| P0 | `loginctl enable-linger cbasta` | Bot dies on logout |
+| P0 | `loginctl enable-linger $USER` | Bot dies on logout |
 | P0 | Create LiteLLM keys for intenx/sensit teams | Client isolation |
 | P1 | `ctx/archive/raw/` to .gitignore in knowledge repos | Git growth |
 | P1 | LanceDB embedding pipeline | Semantic search |

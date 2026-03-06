@@ -84,9 +84,9 @@ Description=RTGF Telegram Interface Bot
 After=network.target
 
 [Service]
-WorkingDirectory=/home/cbasta/rtgf-ai-stack/interface
-ExecStart=/home/cbasta/.nvm/versions/node/v22.22.0/bin/node bot.js
-EnvironmentFile=/home/cbasta/rtgf-ai-stack/interface/.env
+WorkingDirectory=/home/<user>/rtgf-ai-stack/interface
+ExecStart=/home/<user>/.nvm/versions/node/v22.x.x/bin/node bot.js
+EnvironmentFile=/home/<user>/rtgf-ai-stack/interface/.env
 Restart=on-failure
 RestartSec=10
 
@@ -102,7 +102,7 @@ systemctl --user enable --now rtgf-interface
 journalctl --user -u rtgf-interface -f
 
 # Enable persistence without active session
-loginctl enable-linger cbasta
+loginctl enable-linger $USER
 ```
 
 ## Multi-Client Config
@@ -111,13 +111,13 @@ loginctl enable-linger cbasta
 
 ```yaml
 chats:
-  "8533717947":          # cbasta personal
-    client: cbasta
+  "111222333":           # admin personal chat
+    client: admin
     admin: true
     default_model: local-general
 
-  "-1001234567890":      # intenx group chat
-    client: intenx
-    litellm_key: ${INTENX_LITELLM_KEY}
+  "-1001234567890":      # client group chat
+    client: client-a
+    litellm_key: ${CLIENT_A_LITELLM_KEY}
     default_model: local-general
 ```

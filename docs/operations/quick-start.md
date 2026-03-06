@@ -1,12 +1,17 @@
 # Quick Start
 
-## Prerequisites
+## Environment
 
-- WSL2 with Ubuntu (INTenXDev + Ubuntu-AI-Hub instances)
-- Ollama running on Windows (AMD GPU)
-- Docker installed on Ubuntu-AI-Hub
-- Node.js 18+ on INTenXDev
-- Telegram bot token (from BotFather)
+**Tested with:**
+
+- WSL2 on Windows 11, Ubuntu 22.04+ distros
+- Two WSL instances: one for development (Dev WSL), one as gateway host (AI Hub WSL)
+- Ollama on Windows with a GPU (AMD or NVIDIA); CPU-only works but is slow
+- Docker Desktop or Docker Engine on the gateway host WSL
+- Node.js 18+ on the Dev WSL (tested with v22)
+- Telegram bot token via [BotFather](https://t.me/BotFather) (required for the interface)
+
+A single WSL instance works for testing — just run both the gateway and bot on the same machine.
 
 ## 1. Start Ollama
 
@@ -20,7 +25,7 @@ Or from WSL:
 source /mnt/c/Temp/wsl-shared/ollama-setup.sh
 ```
 
-## 2. Start LiteLLM Gateway (Ubuntu-AI-Hub)
+## 2. Start LiteLLM Gateway (AI Hub WSL)
 
 ```bash
 cd ~/rtgf-ai-stack
@@ -33,7 +38,7 @@ docker compose -f compose/gateway.yml up -d
 
 Verify: `curl http://localhost:4000/health`
 
-## 3. Start Telegram Bot (INTenXDev)
+## 3. Start Telegram Bot (Dev WSL)
 
 ```bash
 cd ~/rtgf-ai-stack/interface
@@ -50,7 +55,7 @@ journalctl --user -u rtgf-interface -f
 
 Enable persistence without active login session:
 ```bash
-loginctl enable-linger cbasta
+loginctl enable-linger $USER
 ```
 
 ## 4. Activate WARD Hooks
@@ -78,7 +83,7 @@ In Telegram, send `/help` to your bot — you should see the full command menu.
 Ollama unreachable or LiteLLM not connected to DB.
 
 ```bash
-# On Ubuntu-AI-Hub
+# On AI Hub WSL
 docker compose -f compose/gateway.yml ps
 docker compose -f compose/gateway.yml logs litellm | tail -20
 ```
@@ -88,14 +93,14 @@ docker compose -f compose/gateway.yml logs litellm | tail -20
 Gateway IP changed. The bot auto-discovers — wait ~5s and retry. If persistent:
 
 ```bash
-# Check what IP gateway is on now
-ip route show  # from INTenXDev WSL
+# Check what IP gateway is on now (from Dev WSL)
+ip route show
 ```
 
 ### "Budget limit reached"
 
 ```bash
-# Create or reset a key on Ubuntu-AI-Hub
+# Create or reset a key (on AI Hub WSL)
 bash ~/rtgf-ai-stack/gateway/setup-client.sh <client> <budget>
 # Update LITELLM_DEFAULT_KEY in interface/.env
 ```

@@ -9,20 +9,20 @@ graph TB
         WIN_APP["Windows Apps\nBrowser, Telegram Desktop"]
     end
 
-    subgraph HUB["Ubuntu-AI-Hub WSL"]
+    subgraph HUB["AI Hub WSL\n(gateway host)"]
         GW["LiteLLM Gateway\n:4000 (HTTP)"]
         LC["LibreChat\n:3080 (HTTP)"]
         PG["PostgreSQL\n:5432 (internal)"]
         GW --- PG
     end
 
-    subgraph CW["INTenXDev WSL (ColeWork)"]
+    subgraph CW["Dev WSL\n(primary development)"]
         BOT["Telegram Bot\nnode bot.js\nsystemd user service"]
         CC["Claude Code\nclaude CLI"]
         WA["wsl-audit"]
     end
 
-    subgraph SD["SensitDev WSL"]
+    subgraph SD["Client WSL\n(client isolation)"]
         CC2["Claude Code\n(client isolation)"]
     end
 
@@ -58,10 +58,10 @@ graph TB
 | Service | Host | Port | Protocol | Notes |
 |---------|------|------|----------|-------|
 | Ollama API | Windows | 11434 | HTTP | Accessible from all WSL via NAT bridge |
-| LiteLLM Gateway | Ubuntu-AI-Hub | 4000 | HTTP | OpenAI-compatible `/v1` endpoint |
-| LiteLLM UI | Ubuntu-AI-Hub | 4000 | HTTP | `/ui` dashboard |
-| LibreChat | Ubuntu-AI-Hub | 3080 | HTTP | Web UI |
-| PostgreSQL | Ubuntu-AI-Hub | 5432 | TCP | Internal, LiteLLM backend only |
+| LiteLLM Gateway | AI Hub WSL | 4000 | HTTP | OpenAI-compatible `/v1` endpoint |
+| LiteLLM UI | AI Hub WSL | 4000 | HTTP | `/ui` dashboard |
+| LibreChat | AI Hub WSL | 3080 | HTTP | Web UI |
+| PostgreSQL | AI Hub WSL | 5432 | TCP | Internal, LiteLLM backend only |
 
 ## Gateway Discovery
 

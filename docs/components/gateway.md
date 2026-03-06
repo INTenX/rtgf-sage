@@ -1,6 +1,6 @@
 # LiteLLM Gateway
 
-**Status:** ✅ Deployed (Ubuntu-AI-Hub)
+**Status:** ✅ Deployed (AI Hub WSL — gateway host)
 **Location:** `gateway/` + `compose/gateway.yml`
 **Endpoint:** `http://<hub-ip>:4000/v1`
 
