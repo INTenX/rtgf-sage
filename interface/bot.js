@@ -301,6 +301,67 @@ bot.onText(/\/chronicle(?:\s+(.+))?/, async (msg, match) => {
   await send(chatId, `*CHRONICLE sessions matching "${query}":*\n${results}`)
 })
 
+// ── Confirmation gate ─────────────────────────────────────────────────────────
+// Stores one pending operation per chat. Expires after 60s.
+
+const pendingConfirm = {}  // chatId (string) → { op, args, messageId, expiresAt }
+
+async function confirmPrompt(chatId, op, args, label) {
+  const msg = await bot.sendMessage(chatId, `Confirm: *${label}*?`, {
+    parse_mode: 'Markdown',
+    reply_markup: {
+      inline_keyboard: [[
+        { text: '✅ Confirm', callback_data: `confirm:${op}` },
+        { text: '❌ Cancel',  callback_data: 'cancel' }
+      ]]
+    }
+  })
+  pendingConfirm[String(chatId)] = { op, args, messageId: msg.message_id, expiresAt: Date.now() + 60_000 }
+}
+
+bot.on('callback_query', async (query) => {
+  const chatId = query.message.chat.id
+  const id = String(chatId)
+  const data = query.data
+
+  await bot.answerCallbackQuery(query.id)
+
+  const pending = pendingConfirm[id]
+
+  if (!pending || Date.now() > pending.expiresAt) {
+    await bot.editMessageText('⏱ Expired.', { chat_id: chatId, message_id: query.message.message_id })
+      .catch(() => {})
+    delete pendingConfirm[id]
+    return
+  }
+
+  if (data === 'cancel') {
+    await bot.editMessageText('❌ Cancelled.', { chat_id: chatId, message_id: query.message.message_id })
+      .catch(() => {})
+    delete pendingConfirm[id]
+    return
+  }
+
+  if (data === `confirm:${pending.op}`) {
+    await bot.editMessageText('⏳ Running…', { chat_id: chatId, message_id: query.message.message_id })
+      .catch(() => {})
+    const { op, args } = pending
+    delete pendingConfirm[id]
+
+    try {
+      if (op === 'pull') {
+        const result = await pullModel(args.modelName)
+        await send(chatId, result)
+      } else if (op === 'import') {
+        const output = loreImport()
+        await send(chatId, `\`\`\`\n${output}\n\`\`\``)
+      }
+    } catch (err) {
+      await send(chatId, `Error: ${err.message}`)
+    }
+  }
+})
+
 // ── Admin commands ────────────────────────────────────────────────────────────
 
 bot.onText(/\/spend/, async (msg) => {
@@ -336,13 +397,7 @@ bot.onText(/\/pull(?:\s+(.+))?/, async (msg, match) => {
     await send(chatId, 'Usage: /pull <model-name>')
     return
   }
-  await bot.sendChatAction(chatId, 'typing')
-  try {
-    const result = await pullModel(modelName)
-    await send(chatId, result)
-  } catch (err) {
-    await send(chatId, `Error: ${err.message}`)
-  }
+  await confirmPrompt(chatId, 'pull', { modelName }, `Pull model \`${modelName}\``)
 })
 
 bot.onText(/\/import/, async (msg) => {
@@ -351,9 +406,7 @@ bot.onText(/\/import/, async (msg) => {
     await send(chatId, 'Admin only.')
     return
   }
-  await bot.sendChatAction(chatId, 'typing')
-  const output = loreImport()
-  await send(chatId, `\`\`\`\n${output}\n\`\`\``)
+  await confirmPrompt(chatId, 'import', {}, 'Run CHRONICLE session import')
 })
 
 // ─── Scheduled Jobs ───────────────────────────────────────────────────────────
