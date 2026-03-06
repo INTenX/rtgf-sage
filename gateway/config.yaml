@@ -105,21 +105,21 @@ model_list:
       api_base: "os.environ/OLLAMA_API_BASE"
 
   # ── Anthropic Claude ─────────────────────────────────────────────────────────
-  # Uncomment when ANTHROPIC_API_KEY is set in gateway/.env
+  # Requires ANTHROPIC_API_KEY in gateway/.env
 
-  # - model_name: claude-sonnet-4-6
-  #   litellm_params:
-  #     model: anthropic/claude-sonnet-4-6
-  #     api_key: "os.environ/ANTHROPIC_API_KEY"
+  - model_name: claude-sonnet
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6
+      api_key: "os.environ/ANTHROPIC_API_KEY"
 
-  # - model_name: claude-opus-4-6
+  - model_name: claude-haiku
+    litellm_params:
+      model: anthropic/claude-haiku-4-5-20251001
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+
+  # - model_name: claude-opus
   #   litellm_params:
   #     model: anthropic/claude-opus-4-6
-  #     api_key: "os.environ/ANTHROPIC_API_KEY"
-
-  # - model_name: claude-haiku-4-5
-  #   litellm_params:
-  #     model: anthropic/claude-haiku-4-5-20251001
   #     api_key: "os.environ/ANTHROPIC_API_KEY"
 
   # ── OpenAI ───────────────────────────────────────────────────────────────────

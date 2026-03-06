@@ -117,11 +117,15 @@ bot.onText(/\/start|\/help/, async (msg) => {
   await send(chatId, `*rtgf-interface* — INTenX AI Stack
 Client: ${cfg?.client ?? 'personal'} | Model: \`${model}\`
 
-*Ask:*
+*Ask (local):*
 /ask <prompt> — General question (${modelForCommand('ask')})
 /code <prompt> — Coding question (${modelForCommand('code')})
 /reason <prompt> — Deep reasoning (${modelForCommand('reason')})
 /fast <prompt> — Quick answer (${modelForCommand('fast')})
+
+*Ask (cloud):*
+/claude <prompt> — Claude Sonnet (${modelForCommand('claude')})
+/claudefast <prompt> — Claude Haiku (${modelForCommand('claude-fast')})
 
 *Stack:*
 /status — Platform health (wsl-audit risks)
@@ -209,6 +213,12 @@ bot.onText(/\/reason(?:\s+(.+))?/s, async (msg, match) => {
 
 bot.onText(/\/fast(?:\s+(.+))?/s, async (msg, match) => {
   await handleAsk(msg, match[1]?.trim(), activeModel(msg.chat.id, modelForCommand('fast')))
+})
+
+bot.onText(/\/claude(?:fast)?(?:\s+(.+))?/s, async (msg, match) => {
+  const isFast = msg.text?.startsWith('/claudefast')
+  const modelKey = isFast ? 'claude-fast' : 'claude'
+  await handleAsk(msg, match[1]?.trim(), modelForCommand(modelKey))
 })
 
 // Non-command messages in private chats → route to active model

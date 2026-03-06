@@ -48,6 +48,8 @@ models:
   code: qwen2.5-coder:14b
   reason: deepseek-r1:14b
   fast: llama3.2:3b
+  claude: claude-sonnet       # /claude command — requires ANTHROPIC_API_KEY in gateway/.env
+  claude-fast: claude-haiku   # /claudefast command
 
 # ── Scheduled Jobs ──────────────────────────────────────────────────────────
 # Cron jobs that run automatically and post results to a chat.
