@@ -1,54 +1,43 @@
 # LiteLLM Gateway — Docker Compose
 # INTenX AI Stack — compose/gateway.yml
 #
-# Start:   docker compose -f compose/gateway.yml up -d
+# Start:   docker compose -f compose/gateway.yml --env-file gateway/.env up -d
 # Stop:    docker compose -f compose/gateway.yml down
 # Logs:    docker compose -f compose/gateway.yml logs -f litellm
 # Health:  curl http://localhost:4000/health
 #
 # Env:     Copy gateway/.env.example to gateway/.env and fill in values
-#          docker compose -f compose/gateway.yml --env-file gateway/.env up -d
-#
-# UI:      http://localhost:4000/ui  (login with LITELLM_MASTER_KEY)
+
+name: litellm
 
 services:
 
   litellm:
-    # Phase 2: switched to main-latest (glibc) for Prisma binary engine compatibility.
-    # main-stable uses wolfi/musl which lacks the Prisma query engine binary.
-    image: ghcr.io/berriai/litellm:main-latest
+    image: ghcr.io/berriai/litellm:main-stable
     container_name: litellm-gateway
     restart: unless-stopped
     ports:
       - "4000:4000"
     volumes:
-      # Mount gateway config (read-only)
       - ../gateway/config.yaml:/app/config.yaml:ro
-      # SQLite data volume — spend tracking persists across container restarts
-      - litellm-data:/data
     environment:
-      # LiteLLM config file path inside container
       LITELLM_CONFIG_PATH: /app/config.yaml
-
-      # Secrets — passed from gateway/.env
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
-
-      # Phase 2: SQLite DB for spend tracking persistence.
-      # File lives in named volume /data — survives container restarts.
-      # 4 slashes = absolute path for SQLite in SQLAlchemy/Prisma URL format.
-      DATABASE_URL: ${DATABASE_URL:-sqlite:////data/litellm.db}
-
-      # Model provider API keys
+      # Hub: DATABASE_URL=postgresql://litellm:litellm@db:5432/litellm
+      # Dev (SQLite fallback): DATABASE_URL=sqlite:////data/litellm.db
+      DATABASE_URL: ${DATABASE_URL}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-
-      # Ollama base URL (host.docker.internal = Windows host from Docker)
       OLLAMA_API_BASE: ${OLLAMA_API_BASE:-http://host.docker.internal:11434}
 
     command: >
       --config /app/config.yaml
       --port 4000
       --host 0.0.0.0
+
+    depends_on:
+      db:
+        condition: service_healthy
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/health/liveliness"]
@@ -62,10 +51,23 @@ services:
         limits:
           memory: 512m
 
-  # Postgres service removed — replaced by SQLite file in named volume (Phase 2).
-  # SQLite: no external dependency, persists via litellm-data volume.
-  # To restore Postgres: add db service back and set DATABASE_URL=postgresql://...
+  db:
+    image: postgres:16-alpine
+    container_name: litellm-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-litellm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-litellm}
+      POSTGRES_DB: ${POSTGRES_DB:-litellm}
+    volumes:
+      - litellm-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-litellm}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  litellm-data:
-    name: litellm-data
+  litellm-db-data:
+    name: litellm-db-data
+    external: true
