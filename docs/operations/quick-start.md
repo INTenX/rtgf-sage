@@ -83,7 +83,28 @@ bash ~/rtgf-ai-stack/hooks/install-hooks.sh
 # Edit ~/.claude/hooks/ward.env with TELEGRAM_TOKEN and TELEGRAM_CHAT_ID
 ```
 
-## 5. Verify Everything
+## 5. Enable CHRONICLE Daily Import (Dev WSL)
+
+Auto-imports yesterday's Claude Code sessions into the knowledge repos each night.
+
+```bash
+# On Dev WSL (where ~/.claude/projects/ lives)
+crontab -e
+# Add:
+PATH=/home/<user>/.nvm/versions/node/v22.x.x/bin:/home/<user>/.local/bin:/usr/local/bin:/usr/bin:/bin
+0 2 * * * /home/<user>/rtgf-ai-stack/chronicle/cron-daily-import.sh >> /home/<user>/logs/chronicle-import-cron.log 2>&1
+```
+
+```bash
+# On AI Hub WSL (pulls from GitHub so ctx-search sees new sessions)
+crontab -e
+# Add:
+30 2 * * * /home/<user>/rtgf-ai-stack/chronicle/cron-hub-pull.sh >> /home/<user>/logs/chronicle-hub-pull-cron.log 2>&1
+```
+
+Logs: `~/logs/chronicle-import-YYYY-MM-DD.log`
+
+## 6. Verify Everything
 
 In Telegram, send `/help` to your bot — you should see the full command menu.
 
