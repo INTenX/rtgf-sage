@@ -10,6 +10,7 @@ const { loadConfig, chatConfig, isAdmin, modelForCommand } = require('./lib/conf
 const { ask, listModels, spendSummary } = require('./lib/gateway')
 const { searchLore, getContextForPrompt } = require('./lib/chronicle')
 const { wslAudit, pullModel, ollamaModels, loreImport, wardDigest } = require('./lib/tools')
+const { dispatchTask, AGENT_TYPES } = require('./lib/dispatcher')
 
 // ─── History persistence ──────────────────────────────────────────────────────
 
@@ -133,6 +134,7 @@ Client: ${cfg?.client ?? 'personal'} | Model: \`${model}\`
 /health — Full platform audit (wsl-audit all)
 /models — Available models
 /chronicle <query> — Search CHRONICLE session archive
+/dispatch <type> <goal> — Run a focused agent task (research/code/write/analyze)
 
 *Settings:*
 /model <name> — Switch active model for this chat
@@ -299,6 +301,50 @@ bot.onText(/\/chronicle(?:\s+(.+))?/, async (msg, match) => {
     return
   }
   await send(chatId, `*CHRONICLE sessions matching "${query}":*\n${results}`)
+})
+
+// ── Agent dispatch ────────────────────────────────────────────────────────────
+
+bot.onText(/\/dispatch(?:\s+(\w+)(?:\s+(.+))?)?/s, async (msg, match) => {
+  const chatId = msg.chat.id
+  const type = match[1]?.trim()
+  const goal = match[2]?.trim()
+
+  if (!type || !goal) {
+    await send(chatId, `Usage: /dispatch <type> <goal>\n\nTypes: ${AGENT_TYPES.join(', ')}\n\nExample:\n/dispatch research What are the trade-offs of LanceDB vs Meilisearch?`)
+    return
+  }
+
+  if (!AGENT_TYPES.includes(type)) {
+    await send(chatId, `Unknown type: \`${type}\`\nValid types: ${AGENT_TYPES.join(', ')}`)
+    return
+  }
+
+  const { randomUUID } = require('crypto')
+  const taskId = randomUUID()
+  const keepalive = setInterval(() => bot.sendChatAction(chatId, 'typing').catch(() => {}), 4000)
+  await bot.sendChatAction(chatId, 'typing')
+
+  try {
+    const result = await dispatchTask({
+      taskId,
+      type,
+      goal,
+      constraints: { model: modelForCommand('claude') },
+      callback: { type: 'telegram', chat_id: chatId },
+    })
+
+    clearInterval(keepalive)
+
+    if (result.status === 'completed') {
+      await send(chatId, result.result)
+    } else {
+      await send(chatId, `Dispatch failed: ${result.result}`)
+    }
+  } catch (err) {
+    clearInterval(keepalive)
+    await send(chatId, `Error: ${err.message}`)
+  }
 })
 
 // ── Confirmation gate ─────────────────────────────────────────────────────────
