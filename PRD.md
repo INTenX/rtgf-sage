@@ -1,19 +1,41 @@
 # PRD: INTenX AI Development Stack
-**Version:** 0.2 (Security-First Rework)
-**Date:** 2026-02-22
+
+**Version:** 0.3 (Architecture Rework)
+**Date:** 2026-03-07
 **Owner:** INTenX / AI Stack session
 
 ---
 
 ## Problem Statement
 
-INTenX operates an AI-first consulting practice across multiple clients, disciplines, and WSL environments. As AI usage scales, three problems compound:
+INTenX operates an AI-first engineering practice across multiple clients, disciplines, and WSL environments. Three compounding problems limit scale:
 
-1. **No cost attribution.** AI spend (API calls, local compute, subscriptions) is invisible at the client or project level. There's no way to know what a client engagement costs in AI resources.
+1. **No cost attribution.** AI spend is invisible at the client or project level. No way to know what an engagement costs in AI resources.
 
-2. **Knowledge loss.** Valuable reasoning and decisions happen inside LLM sessions — Claude Code, ChatGPT, Gemini — and disappear. There's no durable knowledge base that agents and engineers can query.
+2. **Knowledge loss.** Valuable reasoning and decisions happen inside LLM sessions and disappear. There's no durable knowledge base that agents and engineers can query across sessions or clients.
 
-3. **Platform fragility.** Each AI service is independently wired. There's no unified routing, no fallback, no budget enforcement, and no observability. A Docker restart storm can take down the whole machine with no detection.
+3. **Platform fragility.** Each AI service is independently wired — no unified routing, no fallback, no budget enforcement, no observability. Context is lost at every session boundary.
+
+A fourth problem emerges at scale:
+
+4. **Labor bottleneck.** Even with AI tools, design work (circuit design, fixture design, test fixture fabrication) has irreducible labor costs that prevent lean business models like leasing.
+
+The AI stack addresses all four. The platform compounds: each client engagement produces knowledge that makes every future engagement better.
+
+---
+
+## The Platform in Context
+
+The rtgf-ai-stack is **horizontal infrastructure** for an AI-first engineering practice. It powers four business lines that share the same foundation:
+
+| Business line | What it does | How the platform enables it |
+|---------------|-------------|----------------------------|
+| **INTenX Consulting** | Engineering practice across client engagements | CHRONICLE knowledge, WARD audit trail, LiteLLM attribution |
+| **AI-Agentic Design Suite** | Claude + KiCad (EDA) + OpenSCAD (MCAD) — conversational design, user never touches files | Skills packs + CHRONICLE design history + Dispatcher |
+| **TFAAS** | Test Fixtures as a Service — AI-designed custom fixtures, leased not sold | AI reduces fixture design labor 60-80% → lease economics viable |
+| **rtgf-ai-stack** | The platform itself — open-source core + managed hosting | CHRONICLE + WARD + LiteLLM + Skills + MCP |
+
+All four lines are in production or active development. The platform compounds: knowledge from one engagement accelerates all others.
 
 ---
 
@@ -21,169 +43,187 @@ INTenX operates an AI-first consulting practice across multiple clients, discipl
 
 | User | Role |
 |------|------|
-| **Cole (primary)** | AI-first consultant — designs, builds, and ships across all client engagements |
-| **INTenX agents** | Claude Code sessions and future AI agents running across WSL instances |
-| **Client teams** | Indirect beneficiaries of knowledge captured and AI infrastructure built on their behalf |
-| **Control Center** | Strategic oversight — approves major stack decisions, receives session index |
+| **Cole (primary)** | AI-first engineer — designs, builds, and ships across client engagements |
+| **INTenX agents** | Claude Code sessions and Dispatcher agents running across WSL instances |
+| **Client teams** | Indirect beneficiaries of knowledge captured and AI infrastructure |
+| **Control Center** | Strategic oversight — receives session index, approves major decisions |
 
 ---
 
 ## Goals
 
-1. **Per-client AI cost attribution** — know what each client engagement costs in AI spend, with budget guardrails before spend happens.
+1. **Per-client AI cost attribution** — know what each engagement costs in AI spend, with budget guardrails before spend happens.
 2. **Zero-toil session archival** — all LLM conversations across all platforms automatically archived, versioned, searchable.
-3. **Unified model routing** — one endpoint for local (Ollama) and cloud (Anthropic, OpenAI) models; swap backends without changing application code.
-4. **Platform health observability** — proactive detection of WSL/Docker runaway conditions and resource exhaustion before they cause incidents.
-5. **Security-by-default autonomous operation** — every tool call logged, dangerous operations blocked before execution, full audit trail for SOC 2 evidence.
-6. **Session-level knowledge reuse** — past sessions discoverable and retrievable as context for future work (RAG pipeline).
-7. **Inter-session coordination** — agents and sessions able to hand off context and tasks to each other (BATON — future).
+3. **Unified model routing** — one endpoint for local (Ollama) and cloud (Anthropic, OpenAI); swap backends without changing application code.
+4. **Platform health observability** — proactive detection of WSL/Docker runaway conditions and resource exhaustion before incidents.
+5. **Security-by-default autonomous operation** — every tool call logged, dangerous operations blocked before execution, full audit trail.
+6. **Session-level knowledge reuse** — past sessions discoverable and retrievable as context for future work.
+7. **Inter-session coordination** — agents and sessions able to hand off context and tasks across boundaries (BATON).
+8. **Autonomous task delegation** — delegate a goal via Telegram, a Dispatcher agent executes it, result archived and reported back.
 
 ## Non-Goals
 
-- Building a SaaS product (internal use, potential open-source later)
+- Building a SaaS from day one (internal use first; open-source and managed tiers come later)
 - Supporting every LLM platform on day one
-- Real-time token streaming analytics (logs + summaries are sufficient)
 - Replacing Claude Code or Codex CLI as primary agents
+- Real-time token streaming analytics (structured logs + summaries are sufficient)
 
 ---
 
-## Current State (2026-02-19)
+## Architecture
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| **Ollama** | ✅ Operational | Windows/AMD RX 7600S (8GB VRAM), accessible from all WSL instances. 8 models + deepseek-r1:14b (pulling). |
-| **CHRONICLE (session archival)** | ✅ Production | Claude Code working, 100+ sessions. ChatGPT/Gemini adapters pending. |
-| **LibreChat** | ✅ Keep + decouple | Ollama web UI value. Route RAG through LiteLLM — no direct RAG API integration. |
-| **Cross-WSL session index** | ✅ Operational | JSON index exported, queryable by Control Center |
-| **wsl-audit** | ✅ Built | `~/.local/bin/wsl-audit` + `scripts/wsl-audit`. Platform health: .wslconfig, memory, Docker restart detection. |
-| **LiteLLM gateway** | ✅ Built | `gateway/` + `compose/gateway.yml`. Routes Ollama + Anthropic + OpenAI. Per-client virtual keys + budget enforcement. Needs deploy on Ubuntu-AI-Hub. |
-| **Observability (Opcode)** | ⬜ Not started | Session browsing; Opcode first |
-| **CHRONICLE daily cron** | ✅ Built | `cron-daily-import.sh` + `crontab -e` configured |
-| **WARD (hooks)** | ⬜ Phase 2 | `hooks/pre-tool-use.sh` + `hooks/post-tool-use.sh` — built, needs `install-hooks.sh` run |
-| **BATON** | ⬜ Planned | Inter-session coordination — not yet designed. Leash (StrongDM) flagged as runtime enforcement candidate. |
-| **Platform bridge tools** | ✅ Operational | `showclaude`, `rename-session-by-id`, `resume-by-name` — compensate for Claude Code gaps |
+### Core Pattern: Skills + MCP Two Layers
+
+| Layer | Format | Token cost | Purpose |
+|-------|--------|-----------|---------|
+| **Skills** | Markdown files (~200 tokens) | ~250x cheaper than MCP | Timeless knowledge and workflow intelligence |
+| **MCP servers** | Live execution connections | Full tool call per use | Live data access and execution |
+
+Skills encode *how to think about a problem*. MCP servers provide live execution. A well-structured Skills library makes every agent meaningfully more capable at minimal cost. This is the efficiency multiplier at every stage of the scaling model.
+
+### CHRONICLE as MCP Memory Server
+
+CHRONICLE is both a passive archive and an active memory server. The MCP interface allows any agent to query past sessions, retrieve codified patterns, and inject relevant context before executing a task — without manual context management.
+
+### Intent Classifier
+
+A lightweight local model (phi4-mini) sits at the Telegram interface and routes every incoming message to the appropriate execution tier before any expensive work begins:
+
+```
+Telegram message
+    → phi4-mini intent classification
+        → status/query        →  local Ollama model
+        → task execution      →  LiteLLM gateway (best-fit)
+        → complex reasoning   →  Claude API (opus or sonnet)
+```
+
+Keeps latency low and cost minimal for the 80% of interactions that don't need a frontier model.
+
+### Artifact Pipeline
+
+```
+Telegram dispatch
+    → Intent classifier
+    → Dispatcher agent
+    → CHRONICLE context pull
+    → LLM execution
+    → Git artifact (file, commit, PR)
+    → Telegram reply with summary + link
+```
 
 ---
 
 ## Components
 
 ### CHRONICLE — Session Archive and Knowledge Curation (`chronicle/`)
-Git-native session archival. Canonical YAML format (OMF-based), knowledge flow states (hypothesis → codified → validated → promoted), per-client isolation via separate repos.
 
-**Remaining work:** Daily import cron, ChatGPT/Gemini adapters, session search CLI.
+Git-native session archival. Canonical YAML format, knowledge flow states (hypothesis → codified → validated → promoted), per-client isolation via separate repos.
+
+**Current status:** Production — 100+ sessions archived (Claude Code). ChatGPT/Gemini adapters available.
+
+**Planned:**
+- MCP server exposing session search + context retrieval as MCP tools
+- LanceDB semantic index over promoted + validated sessions
+- Per-client `client` field enforced on all sessions and search results
 
 ---
 
 ### LiteLLM Gateway (`gateway/`)
-Single proxy endpoint routing all model calls. Provides:
-- Unified API for Ollama local models + Anthropic + OpenAI + future providers
-- Per-client/per-tag spend tracking and budget enforcement
-- Model fallback (local → cloud if Ollama unavailable)
-- Request logging for cost attribution
 
-**Scope for v1:** Docker Compose service in `compose/`, config in `gateway/`. Route programmatic API calls and any future agent-to-model calls.
+Single proxy endpoint routing all model calls. Per-client virtual keys + budget enforcement. PostgreSQL spend tracking (deployed on Ubuntu-AI-Hub).
 
-**Limitation:** Claude Code and Codex CLI use their own auth (subscription-based) and bypass the gateway. Attribution for these tools requires CHRONICLE metadata tagging, not LiteLLM routing. See Billing section below.
+**Current status:** Production — deployed on Ubuntu-AI-Hub, PostgreSQL-backed, `compose/gateway.yml`.
 
 ---
 
-### Observability (`observability/`)
-**Platform layer (wsl-audit):** Proactive WSL/Docker health monitoring. Detects restart storms, missing `.wslconfig` memory caps, stale containers. Single bash script, on-demand + watch mode. **Prerequisite to scaling AI services.**
+### WARD — Security Hooks (`hooks/`)
 
-**Application layer (Opcode):** Auto-detects `~/.claude/projects/`, session browsing UI. Fast to set up.
+Pre-execution intercept for every Claude Code tool call. Blocks destructive operations before they execute. Writes structured JSONL audit log as SOC 2 evidence.
 
-**Future (OTel + Grafana):** Real-time cross-WSL dashboards. Don't build until Opcode is in and operational tempo justifies it.
+**Block patterns:** `rm -rf`, `git reset --hard`, force push, SQL DDL drops, SSH key files, private key files, `curl|bash`.
+**Warn patterns:** `.env` access, `--no-verify` commits, production env files.
 
----
-
-### BATON (`baton/`)
-Inter-session coordination. Enables Claude Code sessions and future agents to hand off context, tasks, and knowledge across session boundaries.
-
-**Status:** Not yet designed. Dependent on CHRONICLE reaching validated state for the knowledge layer.
+**Current status:** Built + installed. `hooks/pre-tool-use.sh` + `hooks/post-tool-use.sh`.
 
 ---
 
-### WARD (`hooks/`)
-Real-time monitoring and enforcement layer. Phase 2 Security Foundation component.
+### Telegram Interface (`interface/`)
 
-**Pre-tool-use hook (`hooks/pre-tool-use.sh`):**
-- Intercepts every Claude Code tool call before execution
-- Checks against configurable block policy (`hooks/policy/blocked-patterns.json`)
-- Blocks: `rm -rf`, `git reset --hard`, force push, SQL DDL drops, SSH key access, private key files
-- Warns: `.env` access, `--no-verify` commits, production env files
-- Writes structured JSONL audit log: `~/.claude/audit/YYYY-MM-DD.jsonl`
-- Sends Telegram alert on blocks (requires `ward.env` config)
+Ambient control plane. Stateful conversations, CHRONICLE context injection, Dispatcher delegation, BATON coordination, WARD digest.
 
-**Post-tool-use hook (`hooks/post-tool-use.sh`):**
-- Logs tool outcomes to same daily audit log (observe-only, never blocks)
+**Bot commands:**
+- `/ask <question>` — stateful conversation with CHRONICLE context
+- `/dispatch <type> <goal>` — delegate task to a Dispatcher agent (research/code/write/analyze)
+- `/baton [list|all|drop|show]` — inter-session coordination
+- `/audit [date]` — WARD daily digest
+- `/models` — Ollama model list
+- `/lore` — CHRONICLE import trigger
+- `/wsl` — wsl-audit platform health
 
-**Install:** `bash ~/rtgf-ai-stack/hooks/install-hooks.sh`
-
-**RTGF mapping:** PCM (Pre-Commit Mapping) — every tool call is a commit that must pass a gate.
+**Current status:** Production — systemd user service on Ubuntu-AI-Hub.
 
 ---
 
-### Scripts (`scripts/`)
-Shared operational scripts. Currently lives in `/mnt/c/Temp/wsl-shared/`. Migration into repo provides versioning and portability.
-- `ollama-setup.sh` — canonical Ollama environment setup
-- `wsl-audit` — platform health tool with structured JSON event log (Phase 2 enhanced)
+### Dispatcher (`interface/lib/dispatcher.js`)
+
+Dispatches sub-agents via LiteLLM gateway for autonomous task execution. CHRONICLE context pulled before execution. Result archived back into CHRONICLE.
+
+**Agent types:** `research`, `code`, `write`, `analyze`
+
+**Current status:** Built. Integrated with bot `/dispatch` command.
+
+---
+
+### BATON — Inter-Session Coordination (`baton/`)
+
+File-based handoff protocol at `/mnt/c/Temp/wsl-shared/baton/`. Pending/claimed/completed state machine. Full CLI at `~/.local/bin/baton`.
+
+**Current status:** Built. CLI + Telegram commands + protocol spec.
+
+---
+
+### wsl-audit (`scripts/wsl-audit`)
+
+Platform health monitoring. Detects restart storms, missing `.wslconfig` memory caps, stale containers. On-demand + watch mode. Structured JSONL event log.
+
+**Current status:** Production — `~/.local/bin/wsl-audit`.
+
+---
+
+### Skills Library (`skills/`) *(planned)*
+
+Markdown Skills files encoding reusable workflow intelligence: EDA design review, fixture specification, client onboarding, code review, test planning. Loaded by agents as needed — ~250x more efficient than equivalent MCP tool calls for knowledge retrieval.
+
+**Current status:** Not yet created. First priority for Stage 2.
 
 ---
 
 ## AI Token / API Usage and Billing
 
-### The Current Reality
-
-INTenX currently runs two categories of AI usage:
-
-**Subscription-based (flat rate):**
-- Claude Code — Anthropic Pro subscription. No per-call cost, but token visibility is limited: `/context` inside a session shows category breakdown; `claude.ai/settings/usage` shows period-level aggregates only. No granular per-session tracking in console.
-- Codex CLI — ChatGPT Plus/Pro subscription. `/status` inside a session shows remaining quota. No per-call tracking.
-
-**Programmatic / gateway-routable:**
-- Ollama — free local models (no billing, but client attribution still matters)
-- Direct API calls from scripts, CHRONICLE pipeline, future agents — currently untracked
-
-### What LiteLLM Actually Provides
-
-LiteLLM tracks every call with full attribution by user, team, tag, or API key. Hierarchical budgeting: Organization → Team → User → Key. Hard budget limits with automatic enforcement. Tag-based cost attribution per client/project. Works across 100+ providers.
-
-Critically: **LiteLLM has a Claude Code granular cost tracking tutorial** — Claude Code can be routed through LiteLLM as a proxy when using API billing. If/when you shift Claude Code from subscription to API billing, routing through LiteLLM gives full per-session token attribution at the client level.
-
-### The Three-Layer Attribution Model
-
-Full per-client billing visibility requires three layers working together:
+### Three-Layer Attribution Model
 
 | Layer | Tool | Covers |
 |-------|------|--------|
-| **Programmatic tracking** | LiteLLM proxy | Ollama, direct API calls, future agent calls |
-| **Subscription session tracking** | CHRONICLE metadata + session index | Claude Code (Pro), Codex (ChatGPT sub) |
-| **Attribution reporting** | Custom billing query (future) | LiteLLM spend logs + CHRONICLE index → per-client invoice |
+| **Programmatic tracking** | LiteLLM proxy | Ollama, direct API calls, Dispatcher agents |
+| **Subscription session tracking** | CHRONICLE metadata + session index | Claude Code Pro, Codex CLI |
+| **Attribution reporting** | Custom billing query (future) | LiteLLM spend logs + CHRONICLE index → per-client |
 
-### Current Attribution by Tool
+### By Tool
 
 | Tool | Cost model | Attribution today | Full attribution path |
 |------|-----------|------------------|----------------------|
 | Claude Code (Pro) | Flat subscription | CHRONICLE session tags + working dir | → API billing + LiteLLM proxy |
-| Codex CLI (ChatGPT) | Flat subscription | CHRONICLE session tags (when adapter built) | → Codex API billing + LiteLLM |
-| Ollama | Free | LiteLLM request tags | ✅ Done at P1 |
-| Direct API calls | Per-token | LiteLLM virtual keys | ✅ Done at P1 |
-
-### Where Billing Fits in Priority
-
-**P1 — LiteLLM gateway** covers the programmatic layer and future-proofs the subscription tools. Even if Claude Code stays on subscription today, building the gateway now means routing is one config change when billing shifts to API.
-
-**Subscription tool visibility gap (known limitation):** Claude Code Pro and Codex CLI on subscription bypass any proxy. For those tools, CHRONICLE session metadata (client tag derived from working directory) is the attribution mechanism. A future `chronicle-billing` query tool that joins LiteLLM spend logs with CHRONICLE session counts could produce client invoices.
-
-**Third-party tools for subscription token monitoring:** `ccusage` and `Claude-Code-Usage-Monitor` (community tools) provide real-time token consumption and predictions for Claude Code Pro. Worth adding to the `scripts/` or `observability/` toolchain.
-
-**Recommendation:** Build LiteLLM at P1, accept that Claude Code Pro is a flat-rate cost center for now, and use CHRONICLE session counts as a proxy for capacity attribution per client. The billing query tool is a P4-P5 item once the data layers exist.
+| Codex CLI (ChatGPT) | Flat subscription | CHRONICLE session tags | → Codex API + LiteLLM |
+| Ollama | Free | LiteLLM request tags | ✅ Done |
+| Dispatcher agents | Per-token API | LiteLLM virtual keys | ✅ Done |
 
 ---
 
 ## Vision
 
-A single person directing a coordinated network of AI agents that autonomously execute client work, accumulate institutional knowledge, track their own costs, and hand off context seamlessly — while the human stays at the strategy and relationship layer.
+A single person directing a coordinated network of AI agents that autonomously execute engineering work, accumulate institutional knowledge, track their own costs, and hand off context seamlessly — while the human operates at strategy and relationship layer.
+
+The platform compounds: each engagement produces knowledge that makes every future engagement better and faster.
 
 ---
 
@@ -191,139 +231,125 @@ A single person directing a coordinated network of AI agents that autonomously e
 
 ### Phase 1 — Foundation ✅ *Complete*
 
-Platform safety, model routing, cost attribution, knowledge archival, ambient interface. The stack exists and can be operated without it collapsing.
+Platform safety, model routing, cost attribution, knowledge archival, ambient interface.
 
 | Component | Status |
 |-----------|--------|
 | wsl-audit | ✅ Built |
-| LiteLLM gateway | ✅ Deployed |
-| CHRONICLE (Claude Code) | ✅ Production |
-| Telegram bot | ✅ Running |
+| LiteLLM gateway | ✅ Deployed (Ubuntu-AI-Hub, PostgreSQL) |
+| CHRONICLE (Claude Code) | ✅ Production (100+ sessions) |
+| Telegram bot | ✅ Running (Ubuntu-AI-Hub, systemd) |
 | CHRONICLE daily cron | ✅ Configured |
-
-**Security posture:** Platform health monitoring, ephemeral cost logging, session archival. No blocking controls.
-
----
-
-### Phase 2 — Security Foundation *(current)*
-
-> **Gate:** Cannot proceed to Phase 5 (Delegatable Agents) without Phase 2 complete.
-
-Real-time monitoring and recording of all agentic tool calls, file access, and destructive operations. This phase makes the stack auditable — every action is logged before it executes. Security is first-class, not bolted on.
-
-#### 2a. WARD — Claude Code Hooks
-
-The only layer that can **block** Claude Code actions before they execute.
-
-- **`hooks/pre-tool-use.sh`** — log + block gate for all tool calls
-- **`hooks/post-tool-use.sh`** — outcome logging (observe-only)
-- **`hooks/policy/blocked-patterns.json`** — configurable block/warn rules
-- **Audit log** — `~/.claude/audit/YYYY-MM-DD.jsonl` (structured JSONL)
-- **Telegram alerts** — blocks trigger immediate notification
-
-**Blocked patterns:** `rm -rf`, `git reset --hard`, force push, SQL DDL drops, SSH key files, private key files, curl|bash.
-**Warned patterns:** `.env` access, `--no-verify` commits, production env files.
-
-**Install:** `bash ~/rtgf-ai-stack/hooks/install-hooks.sh`
-
-#### 2b. LiteLLM Audit Persistence
-
-Re-enable spend tracking with SQLite file in a named Docker volume. No external DB required. Every model API call is persisted across container restarts.
-
-- `DATABASE_URL=sqlite:////data/litellm.db` in `compose/gateway.yml`
-- Named volume `litellm-data` for persistence
-- `store_model_in_db: true` in `gateway/config.yaml`
-- Verbose request logging enabled (`set_verbose: true`)
-
-#### 2c. CHRONICLE Enhanced — Security Fields
-
-New fields in every archived session for client isolation and audit trail:
-
-| Field | Purpose |
-|-------|---------|
-| `client` | Which client this session belongs to (scopes RAG search) |
-| `access_level` | `internal` / `client` / `restricted` — controls sharing |
-| `data_classification` | `normal` / `sensitive` / `restricted` |
-| `adverse_events` | Errors, blocks, and anomalies during this session |
-| `tool_calls_blocked` | Count of WARD blocks this session |
-| `cost_usd` | LiteLLM spend attribution (populated post-session) |
-
-#### 2d. wsl-audit Alerting
-
-Structured JSONL event log (`~/.local/share/wsl-audit/events/YYYY-MM-DD.jsonl`) for all CRIT/WARN events. Telegram alerts on CRIT with 1-hour cooldown per message. New `wsl-audit events` subcommand to query log.
-
-#### Phase 2 Verification Checklist
-
-- [ ] Run `bash ~/rtgf-ai-stack/hooks/install-hooks.sh`
-- [ ] Ask Claude to read `/etc/passwd` — hook blocks, audit log entry created
-- [ ] Restart LiteLLM gateway — spend data persists in SQLite
-- [ ] Import a session with CHRONICLE — `client` field present in frontmatter
-- [ ] Trigger memory > 80% condition — Telegram alert received
-
-*Unlocks: Every action is observable. The stack has a tamper-evident audit trail.*
+| WARD hooks | ✅ Built + installed |
+| Dispatcher | ✅ Built |
+| BATON | ✅ Built |
 
 ---
 
-### Phase 3 — Knowledge Activation *(was Phase 2)*
+### Phase 2 — Knowledge Activation *(current)*
 
-Turn CHRONICLE from an archive into a knowledge system agents can actually use. Now with security fields: search results scoped by `client` field — no cross-client knowledge leakage.
+Turn CHRONICLE from an archive into a knowledge system agents can actively use. Build the Skills layer for efficient workflow knowledge retrieval.
 
-- **Multi-platform adapters** — ChatGPT and Gemini exports captured
-- **Session search CLI** — query past sessions before starting work
-- **RAG pipeline** — promoted sessions → vector store → retrievable context
-- **Opcode** — session browsing UI complementing CHRONICLE
-- **Client-scoped search** — `client` field enforced on all search results
+#### 2a. Skills Library
 
-*Unlocks: A new session can pull what previous sessions knew, scoped to the right client.*
+Create `skills/` directory. Seed with first 10 Skills files from CHRONICLE patterns:
+- EDA: circuit review, BOM spec, DFM checklist
+- MCAD: fixture design workflow, tolerance spec
+- Consulting: client onboarding, engagement closure, session tagging
+- Platform: CHRONICLE import, WARD audit review, LiteLLM key setup
+
+**Deliverable:** Agents loading skills at session start with no manual context management.
+
+#### 2b. CHRONICLE MCP Server
+
+`chronicle/mcp-server.js` — expose CHRONICLE as an MCP tool set:
+- `search_sessions(query, client, state)` — semantic + keyword search
+- `get_session(id)` — full session content
+- `get_patterns(topic)` — promoted knowledge for a topic
+- `add_session_note(id, note)` — annotate sessions from agent context
+
+**Deliverable:** Any agent can pull CHRONICLE context without manual grep or file reads.
+
+#### 2c. LanceDB Semantic Layer
+
+Index all CHRONICLE `promoted` and `validated` sessions in LanceDB. Expose via:
+- `chronicle/tools/cli/ctx-search.js` — CLI semantic search
+- CHRONICLE MCP server `search_sessions()` tool
+
+**Deliverable:** "What do we know about KiCad footprint libraries?" returns relevant sessions, not grep output.
+
+#### 2d. Intent Classifier
+
+Integrate phi4-mini at the Telegram bot entry point. Route by intent before LLM dispatch. Configuration in `interface/config.yaml` with intent type → model tier mapping.
+
+**Deliverable:** Simple status queries resolved in <2s on local Ollama; only complex work reaches Claude API.
+
+#### Phase 2 Verification
+
+- [ ] Agent loads a Skill and uses it correctly without manual context injection
+- [ ] `chronicle/mcp-server.js` returns session results for a test query
+- [ ] `ctx-search "KiCad footprint"` returns relevant promoted sessions
+- [ ] `/ask "what time is it"` routes to Ollama, not Claude API
 
 ---
 
-### Phase 4 — Persistent Chief of Staff Interface *(was Phase 3)*
+### Phase 3 — Vertical Integration *(next)*
 
-The Telegram bot evolves from remote control to stateful agent interface.
+The AI-Agentic Design Suite becomes a first-class component of the stack, not a standalone app.
 
-- **Conversation history** — stateful multi-turn conversations per chat
-- **CHRONICLE context injection** — bot pulls relevant past sessions before responding
-- **Task tracking** — delegate via Telegram, outcomes reported back
-- **Command authorization** — only `ADMIN_CHAT_ID` can trigger agent delegation
-- **All bot commands logged** as CHRONICLE events with `access_level`
+#### 3a. EDA Skills Pack
 
-*Unlocks: A persistent agent that knows your history, clients, and current work.*
+Formalize the Claude + KiCad conversational design workflow as Skills:
+- Schematic design skill (component selection, symbol placement, netlist)
+- PCB layout skill (DRC rules, copper pour, stackup)
+- BOM generation skill (component sourcing, alternates, pricing)
+- Design review skill (checklist, annotation, sign-off)
+
+**Key principle:** User describes intent in plain language. Claude writes KiCad files. User reviews in KiCad. No manual file editing.
+
+#### 3b. MCAD Skills Pack
+
+Formalize the Claude + OpenSCAD conversational design workflow as Skills:
+- Fixture design skill (mounting, tolerance, material selection)
+- Enclosure design skill (IP rating, assembly, BOM)
+- DFM review skill (wall thickness, draft angles, manufacturing constraints)
+
+#### 3c. TFAAS Pipeline
+
+Design the fixture project pipeline within CHRONICLE:
+- Fixture project as a CHRONICLE session with `type: tfaas-fixture`
+- Design history archived; revisions tracked in git
+- Lease terms in session frontmatter; renewal triggers automated
+- `client` field enforced — fixture designs are client-confidential
+
+#### Phase 3 Verification
+
+- [ ] Full fixture designed conversationally (Claude + OpenSCAD) from Telegram → git artifact in <1 hour
+- [ ] CHRONICLE `type: tfaas-fixture` sessions searchable by client
+- [ ] EDA review Skill produces a structured DFM checklist from a KiCad project
 
 ---
 
-### Phase 5 — Delegatable Agents (Dispatcher) *(was Phase 4)*
+### Phase 4 — Multi-Client Scaling *(enterprise)*
 
-> **Prerequisite: Phase 2 complete.** Cannot deploy autonomous agents without the WARD hook layer and audit log in place.
+Scale from single-practitioner to managing 5+ concurrent clients with audit-grade isolation.
 
-The critical leap. Claude Code requires a human in the loop. Autonomous execution requires a **Claude API agent layer** — programmatic, dispatchable, no terminal.
-
-- **Task delegation protocol** — structured format: client, goal, context, deliverable
-- **Dispatcher component** — Claude API agents dispatched by the bot (`dispatcher/`)
-- **CHRONICLE context pull** — agents retrieve relevant knowledge before executing
-- **Outcome archival** — results automatically archived back into CHRONICLE with security fields
-- **Capability manifests** — each agent type has a Cedar policy file defining allowed tools, directories, API endpoints
-- **Human-in-loop gates** — high-stakes actions (destructive ops, git push, spend > threshold) require Telegram approval
-- **Client isolation** — agents cannot access other clients' CHRONICLE knowledge
-
-*Unlocks: Delegate a task in Telegram, an agent executes it, result lands in knowledge base, summary in your chat.*
+- **PostgreSQL + pgvector** — replace SQLite for operational state
+- **Qdrant** — replace LanceDB for production-grade semantic search (multi-tenant)
+- **Per-client MCP isolation** — each client's agents operate in isolated namespace
+- **CHRONICLE export as deliverable** — structured knowledge artifact at engagement close
+- **SOC 2 control mapping** — CHRONICLE + WARD + LiteLLM → formal control evidence
 
 ---
 
-### Phase 6 — Coordinated Agent Network (BATON) *(was Phase 5)*
+### Phase 5 — Platform Product
 
-> **Prerequisite: Phase 5 complete + 30 days of Phase 5 audit log data.**
+The stack becomes a commercial offering:
 
-Multiple specialized agents with defined roles that coordinate and delegate. Human operates at strategy and review layer only.
-
-- **Agent registry** — what agents exist, what they're capable of
-- **Handoff protocol** — structured context passing between agents (`baton/`)
-- **Specialized agents** — coder, researcher, analyst, writer roles
-- **Authenticated handoffs** — sending agent signs context payload, receiving agent verifies
-- **Runtime enforcement (Leash pattern)** — evaluate StrongDM Leash (Apache 2, eBPF, Cedar policies) for production use
-- **BATON audit trail** — every handoff is a signed CHRONICLE event with context hash (tamper-evident chain)
-
-*Unlocks: The vision. Set direction, agents execute and coordinate, outcomes reported.*
+- **Open-source core** — Skills framework, BATON protocol, CHRONICLE format (Apache 2)
+- **Managed hosting tier** — $500-2000/mo per client, INTenX-operated
+- **Enterprise support** — SLA-backed, SOC 2 compliant
+- **Vertical product subscriptions** — AI-Agentic Design Suite, TFAAS
 
 ---
 
@@ -331,41 +357,42 @@ Multiple specialized agents with defined roles that coordinate and delegate. Hum
 
 | Phase | Metric |
 |-------|--------|
-| 1 — Foundation | Platform doesn't fall over. All model calls routed through gateway. |
-| 2 — Security Foundation | Zero unlogged tool calls. At least one block test succeeds. LiteLLM spend data persists across restarts. |
-| 3 — Knowledge | "I found that in CHRONICLE" accelerates work at least once per week. 100% of sessions auto-archived. |
-| 4 — Chief of Staff | Can delegate and get a useful response from Telegram without opening a terminal. |
-| 5 — Dispatcher | Can assign a scoped task via Telegram and receive a completed deliverable without touching a keyboard. |
-| 6 — Network | Multiple agents execute a multi-step client engagement with one human direction-setting prompt. |
+| 1 — Foundation | Platform doesn't fall over. All model calls routed. WARD audit log clean. ✅ |
+| 2 — Knowledge | "I found that in CHRONICLE" accelerates work at least once per week. Agents load Skills without manual injection. |
+| 3 — Vertical | Fixture designed conversationally in <1 hour. EDA review Skill catches real issues. |
+| 4 — Multi-client | 5 concurrent clients, no cross-client knowledge leakage, per-client billing artifact exported. |
+| 5 — Product | First paying managed hosting customer. First TFAAS lease signed. |
 
 ---
 
 ## RTGF Alignment
 
-The AI Stack is the INTenX implementation of RTGF Level 3 → Level 4. Each phase maps to a maturity level:
-
 | RTGF Level | What it requires | AI Stack phase |
 |------------|-----------------|----------------|
 | Level 1 (Intentional) | 3-file starter kit, 3 practices | `AGENT_GUIDANCE.md`, `CLAUDE.md` ✅ |
 | Level 2 (Rhythmic) | Governance refresh cadence, durable/ephemeral split | CHRONICLE daily cron ✅ |
-| Level 3 (Anticipatory) | Automated gates, context governance, multi-client isolation | **Phase 2 — WARD hooks + CHRONICLE security fields** |
-| Level 4 (Self-Correcting) | Governance detects its own drift, compliance mapping | Phase 5-6 + Cedar policies |
-| Level 5 (Generative) | Contributing patterns back to ecosystem | RTGF-Core publication |
+| Level 3 (Anticipatory) | Automated gates, context governance, multi-client isolation | Phase 1 complete ✅ — WARD + CHRONICLE security fields |
+| Level 4 (Self-Correcting) | Governance detects its own drift, compliance mapping | Phase 4 — PostgreSQL + Qdrant + SOC 2 |
+| Level 5 (Generative) | Contributing patterns back to ecosystem | Phase 5 — open-source publication |
 
-**The hooks audit log + CHRONICLE enhanced + LiteLLM spend data = SOC 2 control artifacts.**
-
-When a client engagement asks "what did your AI agents do during this project?":
+**Audit posture:** When a client asks "what did your AI agents do during this project?":
 - **CHRONICLE** — every session conversation and decision
-- **Hooks audit log** — every tool call, block, and anomaly
-- **LiteLLM** — every model API call with cost
+- **WARD audit log** — every tool call, block, and anomaly
+- **LiteLLM** — every model API call with cost attribution
 - **Git history** — every file change, attributed and timestamped
+
+---
+
+## Scaling Evolution Reference
+
+The full 5-stage model (Personal Stack → Reusable Framework → Consultant Engagement → Enterprise → Product) with technology stack decisions at each inflection point is documented in `docs/architecture/scaling-evolution.md`.
 
 ---
 
 ## Open Questions
 
-1. **RAG target:** AnythingLLM still the right choice? Re-evaluate given LiteLLM decouples the backend. Khoj (indexes `.md` files natively) is a strong alternative for Phase 3.
-2. **Dispatcher substrate:** Claude API (Anthropic SDK) vs. an agent framework (LangGraph, CrewAI)? Tradeoffs: control vs. scaffolding.
-3. **BATON protocol:** Minimum viable handoff — file-based CHRONICLE reference, message queue, or API?
-4. **Human-in-loop gates** *(Phase 5):* High-stakes actions requiring Telegram approval before execution: destructive file operations, git push, API calls with write access, spend > $10/session. Gate mechanism: Telegram inline keyboard confirm/deny → logged with timestamp + approver.
-5. **LiteLLM SQLite Prisma compatibility:** The `main-latest` (glibc) image should resolve the Prisma binary engine issue vs `main-stable` (wolfi). Verify on next gateway deploy.
+1. **RAG target:** LanceDB for Phase 2 semantic layer confirmed. Qdrant for Phase 4 multi-tenant. AnythingLLM no longer relevant — the CHRONICLE MCP server provides equivalent access without a separate service.
+2. **Dispatcher framework:** Claude API (Anthropic SDK) directly — current approach. No LangGraph/CrewAI needed at current scale. Re-evaluate at Phase 4 when multi-agent coordination becomes complex.
+3. **Intent classifier deployment:** phi4-mini via Ollama (running locally). Config in `interface/config.yaml` with thresholds per intent class.
+4. **Skills library format:** Standard Markdown with YAML frontmatter (`skill_id`, `domain`, `trigger`, `version`). Loaded by Claude Code via `CLAUDE.md` or by Dispatcher before task execution.
+5. **TFAAS lease mechanics:** Fixture is physically leased; design files stay in client CHRONICLE repo with `access_level: client`. On lease expiration, design files archived to `access_level: restricted`.
