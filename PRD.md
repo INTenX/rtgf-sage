@@ -16,26 +16,9 @@ INTenX operates an AI-first engineering practice across multiple clients, discip
 
 3. **Platform fragility.** Each AI service is independently wired — no unified routing, no fallback, no budget enforcement, no observability. Context is lost at every session boundary.
 
-A fourth problem emerges at scale:
+The AI stack addresses all three. The platform compounds: each client engagement produces knowledge that makes every future engagement better.
 
-4. **Labor bottleneck.** Even with AI tools, design work (circuit design, fixture design, test fixture fabrication) has irreducible labor costs that prevent lean business models like leasing.
-
-The AI stack addresses all four. The platform compounds: each client engagement produces knowledge that makes every future engagement better.
-
----
-
-## The Platform in Context
-
-The rtgf-ai-stack is **horizontal infrastructure** for an AI-first engineering practice. It powers four business lines that share the same foundation:
-
-| Business line | What it does | How the platform enables it |
-|---------------|-------------|----------------------------|
-| **INTenX Consulting** | Engineering practice across client engagements | CHRONICLE knowledge, WARD audit trail, LiteLLM attribution |
-| **AI-Agentic Design Suite** | Claude + KiCad (EDA) + OpenSCAD (MCAD) — conversational design, user never touches files | Skills packs + CHRONICLE design history + Dispatcher |
-| **TFAAS** | Test Fixtures as a Service — AI-designed custom fixtures, leased not sold | AI reduces fixture design labor 60-80% → lease economics viable |
-| **rtgf-ai-stack** | The platform itself — open-source core + managed hosting | CHRONICLE + WARD + LiteLLM + Skills + MCP |
-
-All four lines are in production or active development. The platform compounds: knowledge from one engagement accelerates all others.
+> **Business context:** The platform powers four business lines — INTenX Consulting, AI-Agentic Design Suite, TFAAS, and the platform itself as a product. See `docs/STRATEGY.md` for the full business model.
 
 ---
 
@@ -221,9 +204,7 @@ Markdown Skills files encoding reusable workflow intelligence: EDA design review
 
 ## Vision
 
-A single person directing a coordinated network of AI agents that autonomously execute engineering work, accumulate institutional knowledge, track their own costs, and hand off context seamlessly — while the human operates at strategy and relationship layer.
-
-The platform compounds: each engagement produces knowledge that makes every future engagement better and faster.
+A single engineer directing a coordinated network of AI agents that autonomously execute work, accumulate institutional knowledge, track costs, and hand off context seamlessly — while the human operates at the strategy layer.
 
 ---
 
@@ -293,40 +274,22 @@ Integrate phi4-mini at the Telegram bot entry point. Route by intent before LLM 
 
 ---
 
-### Phase 3 — Vertical Integration *(next)*
+### Phase 3 — Domain Skills Packs *(next)*
 
-The AI-Agentic Design Suite becomes a first-class component of the stack, not a standalone app.
+Extend the Skills library with domain-specific workflow intelligence. Skills encode how to approach a class of problem; agents load them before executing domain work.
 
-#### 3a. EDA Skills Pack
+- **EDA Skills** — KiCad schematic and layout workflow, BOM generation, DFM review checklist
+- **MCAD Skills** — OpenSCAD fixture and enclosure design workflow, tolerance spec, DFM constraints
+- **Consulting Skills** — client onboarding, engagement closure, session tagging conventions
+- **CHRONICLE session type `tfaas-fixture`** — structured frontmatter for fixture design sessions (lease terms, client, revision history)
 
-Formalize the Claude + KiCad conversational design workflow as Skills:
-- Schematic design skill (component selection, symbol placement, netlist)
-- PCB layout skill (DRC rules, copper pour, stackup)
-- BOM generation skill (component sourcing, alternates, pricing)
-- Design review skill (checklist, annotation, sign-off)
-
-**Key principle:** User describes intent in plain language. Claude writes KiCad files. User reviews in KiCad. No manual file editing.
-
-#### 3b. MCAD Skills Pack
-
-Formalize the Claude + OpenSCAD conversational design workflow as Skills:
-- Fixture design skill (mounting, tolerance, material selection)
-- Enclosure design skill (IP rating, assembly, BOM)
-- DFM review skill (wall thickness, draft angles, manufacturing constraints)
-
-#### 3c. TFAAS Pipeline
-
-Design the fixture project pipeline within CHRONICLE:
-- Fixture project as a CHRONICLE session with `type: tfaas-fixture`
-- Design history archived; revisions tracked in git
-- Lease terms in session frontmatter; renewal triggers automated
-- `client` field enforced — fixture designs are client-confidential
+**Key platform requirement:** Skills must be loadable by any agent (Claude Code or Dispatcher) without manual context injection. CHRONICLE session types must support arbitrary `type` values in frontmatter with type-specific search filtering.
 
 #### Phase 3 Verification
 
-- [ ] Full fixture designed conversationally (Claude + OpenSCAD) from Telegram → git artifact in <1 hour
-- [ ] CHRONICLE `type: tfaas-fixture` sessions searchable by client
-- [ ] EDA review Skill produces a structured DFM checklist from a KiCad project
+- [ ] Domain Skill loaded by Dispatcher agent with no manual injection; output reflects Skill content
+- [ ] `ctx-search --type tfaas-fixture --client <id>` returns correct session subset
+- [ ] EDA review Skill invoked by `/dispatch analyze` produces structured DFM checklist
 
 ---
 
@@ -338,18 +301,15 @@ Scale from single-practitioner to managing 5+ concurrent clients with audit-grad
 - **Qdrant** — replace LanceDB for production-grade semantic search (multi-tenant)
 - **Per-client MCP isolation** — each client's agents operate in isolated namespace
 - **CHRONICLE export as deliverable** — structured knowledge artifact at engagement close
-- **SOC 2 control mapping** — CHRONICLE + WARD + LiteLLM → formal control evidence
+- **SOC 2 control mapping** — CHRONICLE + WARD + LiteLLM → formal control evidence package
 
 ---
 
-### Phase 5 — Platform Product
+### Phase 5 — Open Platform
 
-The stack becomes a commercial offering:
-
-- **Open-source core** — Skills framework, BATON protocol, CHRONICLE format (Apache 2)
-- **Managed hosting tier** — $500-2000/mo per client, INTenX-operated
-- **Enterprise support** — SLA-backed, SOC 2 compliant
-- **Vertical product subscriptions** — AI-Agentic Design Suite, TFAAS
+- **Open-source core** — Skills framework, BATON protocol, CHRONICLE YAML format (Apache 2)
+- **Managed hosting** — INTenX-operated instances for clients who don't self-host
+- **Enterprise support tier** — SLA-backed, SOC 2 compliant, data residency options
 
 ---
 
@@ -359,9 +319,9 @@ The stack becomes a commercial offering:
 |-------|--------|
 | 1 — Foundation | Platform doesn't fall over. All model calls routed. WARD audit log clean. ✅ |
 | 2 — Knowledge | "I found that in CHRONICLE" accelerates work at least once per week. Agents load Skills without manual injection. |
-| 3 — Vertical | Fixture designed conversationally in <1 hour. EDA review Skill catches real issues. |
+| 3 — Skills Packs | Domain Skill used by Dispatcher without manual injection. CHRONICLE session type filtering working. |
 | 4 — Multi-client | 5 concurrent clients, no cross-client knowledge leakage, per-client billing artifact exported. |
-| 5 — Product | First paying managed hosting customer. First TFAAS lease signed. |
+| 5 — Open Platform | Open-source core published. First external adopter running their own instance. |
 
 ---
 
@@ -395,4 +355,3 @@ The full 5-stage model (Personal Stack → Reusable Framework → Consultant Eng
 2. **Dispatcher framework:** Claude API (Anthropic SDK) directly — current approach. No LangGraph/CrewAI needed at current scale. Re-evaluate at Phase 4 when multi-agent coordination becomes complex.
 3. **Intent classifier deployment:** phi4-mini via Ollama (running locally). Config in `interface/config.yaml` with thresholds per intent class.
 4. **Skills library format:** Standard Markdown with YAML frontmatter (`skill_id`, `domain`, `trigger`, `version`). Loaded by Claude Code via `CLAUDE.md` or by Dispatcher before task execution.
-5. **TFAAS lease mechanics:** Fixture is physically leased; design files stay in client CHRONICLE repo with `access_level: client`. On lease expiration, design files archived to `access_level: restricted`.
