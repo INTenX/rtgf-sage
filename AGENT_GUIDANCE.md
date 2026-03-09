@@ -110,6 +110,38 @@ node ~/rtgf-ai-stack/chronicle/tools/cli/rcm-find-orphans.js \
 
 ---
 
+## Telegram Relay (BATON-based inbox)
+
+Claude Code sessions can receive messages from Telegram without tmux.
+
+**At session start — activate relay listener:**
+```bash
+SESSION="AI Stack"   # use this session's name
+SLUG="$(echo "$SESSION" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')"
+nohup baton-watch "$SESSION" > /tmp/baton-watch-${SLUG}.log 2>&1 &
+echo $! > /tmp/baton-watch-${SLUG}.pid
+echo "Relay active. Mailbox: /tmp/baton-relay-inbox-${SLUG}.txt"
+```
+
+**Check for inbound relay messages:**
+```bash
+baton-relay-read "AI Stack"
+```
+
+**Respond to a relay message** (ID shown in the mailbox header):
+```bash
+baton complete <id-prefix> --result "your response text"
+```
+
+The Telegram bot polls `completed/` and forwards the result back within 10 seconds.
+
+**Stop the watcher:**
+```bash
+kill $(cat /tmp/baton-watch-ai-stack.pid)
+```
+
+---
+
 ## Escalation Points (to Control Center)
 
 - Major stack decisions (replace LibreChat, observability platform choice)
