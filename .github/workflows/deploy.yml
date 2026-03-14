@@ -1,0 +1,101 @@
+name: Deploy rtgf-interface
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'interface/**'
+      - 'chronicle/**'
+      - 'gateway/**'
+      - '.github/workflows/deploy.yml'
+
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+
+jobs:
+  # ── Determine which environments to deploy ──────────────────────────────────
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      environments: ${{ steps.targets.outputs.environments }}
+    steps:
+      - id: targets
+        run: |
+          # On workflow_dispatch: deploy only the selected environment.
+          # On push: deploy all environments that have the required secrets set.
+          # To add a partner environment, add a new entry to this list and
+          # configure the corresponding GitHub environment + secrets.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "environments=[\"${{ inputs.environment }}\"]" >> $GITHUB_OUTPUT
+          else
+            echo "environments=[\"production\"]" >> $GITHUB_OUTPUT
+          fi
+
+  # ── Deploy job (runs once per target environment) ───────────────────────────
+  deploy:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: ${{ fromJson(needs.setup.outputs.environments) }}
+      fail-fast: false
+
+    environment: ${{ matrix.environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ vars.SSH_PORT || '22' }} ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy to ${{ matrix.environment }}
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ vars.SSH_USER || 'cbasta' }}
+          SSH_PORT: ${{ vars.SSH_PORT || '22' }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/home/cbasta/rtgf-ai-stack' }}
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+              -p "$SSH_PORT" \
+              -o StrictHostKeyChecking=yes \
+              "$SSH_USER@$SSH_HOST" \
+              bash -s <<'ENDSSH'
+            set -e
+            cd "$DEPLOY_PATH"
+            echo "==> git pull"
+            git pull origin master
+
+            echo "==> npm ci (interface)"
+            cd interface && npm ci --omit=dev && cd ..
+
+            echo "==> npm ci (chronicle)"
+            cd chronicle && npm ci --omit=dev && cd ..
+
+            echo "==> restart rtgf-interface"
+            systemctl --user restart rtgf-interface
+
+            echo "==> health check (10s)"
+            sleep 10
+            systemctl --user is-active --quiet rtgf-interface && echo "Service is UP" || { echo "Service FAILED"; exit 1; }
+          ENDSSH
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "::error::Deploy to ${{ matrix.environment }} (${{ secrets.SSH_HOST }}) failed."
+          echo "Check the ssh step output above and verify:"
+          echo "  - SSH_PRIVATE_KEY secret is set in the '${{ matrix.environment }}' GitHub environment"
+          echo "  - SSH_HOST secret points to a reachable host"
+          echo "  - The deploy key public half is in ~/.ssh/authorized_keys on the target"
