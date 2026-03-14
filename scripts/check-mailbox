@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# check-mailbox — check and consume messages from the shared inter-session mailbox
+#
+# Usage:
+#   check-mailbox <wsl-instance> <session-name>
+#
+# Reads all .md files from /mnt/c/temp/messages/<wsl-instance>/<session-name>/
+# Prints a bell + message content for each, moves to archive, writes ACK to sender.
+# Silent (no output, exit 0) when mailbox is empty.
+#
+# ACK: for each message with a From: header, writes <filename>.ack to the sender's inbox.
+#
+# Add to settings.json allowedTools: "Bash(check-mailbox:*)"
+
+WSL_INSTANCE="${1:-}"
+SESSION_NAME="${2:-}"
+
+if [[ -z "$WSL_INSTANCE" || -z "$SESSION_NAME" ]]; then
+  echo "Usage: check-mailbox <wsl-instance> <session-name>" >&2
+  exit 1
+fi
+
+MAILBOX="/mnt/c/temp/messages/${WSL_INSTANCE}/${SESSION_NAME}"
+ARCHIVE="/mnt/c/temp/messages/${WSL_INSTANCE}/archive"
+RECEIVED_AT="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+
+if [[ ! -d "$MAILBOX" ]]; then
+  exit 0
+fi
+
+mkdir -p "$ARCHIVE"
+
+shopt -s nullglob
+msgs=("${MAILBOX}"/*.md)
+
+if [[ ${#msgs[@]} -eq 0 ]]; then
+  exit 0
+fi
+
+for f in "${msgs[@]}"; do
+  printf '\a'
+  cat "$f"
+
+  # Extract From: path to send ACK
+  # Expected format: **From:** C:\temp\messages\<wsl>\<session>
+  # or               **From:** /mnt/c/temp/messages/<wsl>/<session>
+  FROM_RAW="$(grep -m1 '^\*\*From:\*\*' "$f" | sed 's/\*\*From:\*\* *//')"
+
+  # Normalise Windows path to WSL path
+  FROM_WSL="$(echo "$FROM_RAW" | sed 's|C:\\\\temp\\\\messages|/mnt/c/temp/messages|g; s|C:\\temp\\messages|/mnt/c/temp/messages|g; s|\\\\|/|g; s|\\|/|g')"
+
+  FNAME="$(basename "$f")"
+  ACK_NAME="${FNAME%.md}.ack"
+
+  # Write ACK if we have a valid sender path
+  if [[ -n "$FROM_WSL" && "$FROM_WSL" != "$MAILBOX" && -d "$FROM_WSL" ]]; then
+    cat > "${FROM_WSL}/${ACK_NAME}" <<ACKEOF
+**From:** C:\temp\messages\${WSL_INSTANCE}\${SESSION_NAME}
+**To:** ${FROM_RAW}
+**Sent:** ${RECEIVED_AT}
+**ACK:** ${FNAME}
+
+Message received and consumed.
+ACKEOF
+  fi
+
+  mv "$f" "$ARCHIVE/"
+done
