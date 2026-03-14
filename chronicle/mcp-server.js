@@ -32,6 +32,25 @@ import os from 'os';
 import matter from 'gray-matter';
 import MiniSearch from 'minisearch';
 import fg from 'fast-glob';
+import { connect } from '@lancedb/lancedb';
+
+const LANCE_DB_PATH = path.join(os.homedir(), '.chronicle-lancedb');
+const LANCE_TABLE   = 'sessions';
+
+async function semanticSearch(queryText, limit = 10) {
+  try {
+    const { pipeline } = await import('@xenova/transformers');
+    const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', { progress_callback: null });
+    const output = await embedder([queryText], { pooling: 'mean', normalize: true });
+    const vector = output.tolist()[0];
+
+    const db = await connect(LANCE_DB_PATH);
+    const table = await db.openTable(LANCE_TABLE);
+    return await table.search(vector).limit(limit).toArray();
+  } catch {
+    return null; // index not built or model unavailable
+  }
+}
 
 // ── Config ─────────────────────────────────────────────────────────────────
 
@@ -126,14 +145,42 @@ async function buildIndex(repoFilter = null, stateFilter = null) {
 
 // ── Tool handlers ───────────────────────────────────────────────────────────
 
-async function searchSessions({ query, client, state, limit = 10 }) {
+async function searchSessions({ query, client, state, limit = 10, semantic = true }) {
+  // Try semantic search first (requires LanceDB index to be built)
+  if (query && query.trim() && semantic) {
+    const semResults = await semanticSearch(query, limit * 2);
+    if (semResults && semResults.length > 0) {
+      const filtered = semResults
+        .filter(r => (!client || r.repo === client) && (!state || r.flow_state === state))
+        .slice(0, limit);
+
+      return {
+        count: filtered.length,
+        query,
+        mode: 'semantic',
+        filters: { client: client || null, state: state || null },
+        results: filtered.map(r => ({
+          id: r.id,
+          title: r.title,
+          repo: r.repo,
+          state: r.flow_state,
+          date: r.date,
+          platform: r.platform,
+          tags: r.tags ? r.tags.split(',') : [],
+          summary: r.summary,
+          score: r._distance !== undefined ? 1 - r._distance : null,
+        })),
+      };
+    }
+  }
+
+  // Fall back to MiniSearch keyword search
   const { index, sessions } = await buildIndex(client || null, state || null);
 
   let results;
   if (query && query.trim()) {
     results = index.search(query, { limit: limit * 2 });
   } else {
-    // No query — return most recent
     results = sessions
       .sort((a, b) => (b.date > a.date ? 1 : -1))
       .slice(0, limit)
@@ -158,6 +205,7 @@ async function searchSessions({ query, client, state, limit = 10 }) {
   return {
     count: output.length,
     query: query || null,
+    mode: 'keyword',
     filters: { client: client || null, state: state || null },
     results: output,
   };
