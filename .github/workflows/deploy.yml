@@ -7,6 +7,8 @@ on:
       - 'interface/**'
       - 'chronicle/**'
       - 'gateway/**'
+      - 'scripts/**'
+      - 'hooks/**'
       - '.github/workflows/deploy.yml'
 
   workflow_dispatch:
@@ -89,6 +91,30 @@ jobs:
             echo "==> health check (10s)"
             sleep 10
             systemctl --user is-active --quiet rtgf-interface && echo "Service is UP" || { echo "Service FAILED"; exit 1; }
+
+            echo "==> install WARD hooks (idempotent)"
+            bash "$DEPLOY_PATH/hooks/install-hooks.sh"
+
+            echo "==> register crons (idempotent)"
+            # Build the cron entries we need
+            LANCEDB_CRON="0 3 * * * $DEPLOY_PATH/scripts/lancedb-rebuild >> \$HOME/.chronicle-lancedb/rebuild.log 2>&1"
+            UNACKED_CRON="*/15 * * * * \$HOME/.local/bin/check-unacked Ubuntu-AI-Hub ai-stack >> \$HOME/.chronicle-lancedb/messaging-watchdog.log 2>&1"
+            WRAP_SIGNAL_CRON="0 * * * * $DEPLOY_PATH/scripts/wrap-signal-detector >> \$HOME/.chronicle-lancedb/wrap-signals.log 2>&1"
+            PRUNE_CRON="0 4 * * 0 node $DEPLOY_PATH/chronicle/tools/cli/prune-hypothesis.js --target \$HOME/intenx-knowledge >> \$HOME/.chronicle-lancedb/prune.log 2>&1"
+
+            # Add each cron entry if not already present (dedup by command path)
+            for ENTRY in "$LANCEDB_CRON" "$UNACKED_CRON" "$WRAP_SIGNAL_CRON" "$PRUNE_CRON"; do
+              CMD_PART="$(echo "$ENTRY" | cut -d' ' -f6-)"
+              if crontab -l 2>/dev/null | grep -qF "$CMD_PART"; then
+                echo "  cron exists: $CMD_PART"
+              else
+                (crontab -l 2>/dev/null; echo "$ENTRY") | crontab -
+                echo "  cron added: $CMD_PART"
+              fi
+            done
+
+            echo "==> symlink baton CLI (idempotent)"
+            ln -sf "$DEPLOY_PATH/baton/baton.sh" "\$HOME/.local/bin/baton" && chmod +x "$DEPLOY_PATH/baton/baton.sh"
           ENDSSH
 
       - name: Report failure

@@ -4,5 +4,11 @@
     "name": "AI Stack (archive 2026-03-06)",
     "absorbed": "2026-03-06",
     "topics": "Bot on Hub, WARD alerts, CHRONICLE cron, docs updated; pending: history, Dispatcher, BATON"
+  },
+  {
+    "id": "b2de9cb3",
+    "name": "ai-stack (archive 2026-03-14)",
+    "absorbed": "2026-03-14",
+    "topics": "BATON PRD design, backlog review, intent classifier deploy, LanceDB cron"
   }
 ]

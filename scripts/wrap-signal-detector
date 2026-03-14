@@ -1,0 +1,191 @@
+#!/usr/bin/env bash
+# wrap-signal-detector — scan active sessions for wrap signals, alert via Telegram
+#
+# Signals detected:
+#   1. Auto-compaction events in JSONL (context_window_usage > 0.9 or "compacted" summary)
+#   2. Session age > 24h with open tasks
+#   3. Large JSONL (>500KB) — context likely degraded
+#
+# Run via cron:
+#   0 * * * * /home/cbasta/rtgf-ai-stack/scripts/wrap-signal-detector >> ~/.chronicle-lancedb/wrap-signals.log 2>&1
+#
+# Requires: TELEGRAM_TOKEN + TELEGRAM_CHAT_ID in ~/.claude/hooks/ward.env
+
+set -uo pipefail
+
+WARD_ENV="${HOME}/.claude/hooks/ward.env"
+LOG_DIR="${HOME}/.chronicle-lancedb"
+STATE_FILE="${LOG_DIR}/wrap-signal-state.json"
+
+mkdir -p "$LOG_DIR"
+
+TS="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+
+# Load Telegram creds
+TELEGRAM_TOKEN=""
+TELEGRAM_CHAT_ID=""
+if [[ -f "$WARD_ENV" ]]; then
+  # shellcheck source=/dev/null
+  source "$WARD_ENV"
+fi
+
+send_telegram() {
+  local msg="$1"
+  if [[ -z "$TELEGRAM_TOKEN" || -z "$TELEGRAM_CHAT_ID" ]]; then
+    echo "  [WARN] Telegram not configured — skipping alert"
+    return
+  fi
+  curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+    -d "chat_id=${TELEGRAM_CHAT_ID}" \
+    -d "text=${msg}" \
+    -d "parse_mode=Markdown" > /dev/null 2>&1 || true
+}
+
+# Load previously alerted sessions (avoid spam)
+ALERTED=()
+if [[ -f "$STATE_FILE" ]]; then
+  mapfile -t ALERTED < <(python3 -c "
+import json
+with open('$STATE_FILE') as f:
+    d = json.load(f)
+for sid in d.get('alerted', []):
+    print(sid)
+" 2>/dev/null)
+fi
+
+NEW_ALERTS=()
+
+echo "=== wrap-signal-detector: ${TS} ==="
+
+python3 -c "
+import json, glob, os, time, re
+home = os.path.expanduser('~')
+now  = time.time()
+
+LARGE_KB  = 500
+AGE_SECS  = 86400  # 24h
+
+results = []
+seen_ids = set()
+
+for f in sorted(glob.glob(os.path.join(home, '.claude', 'projects', '*', '*.jsonl')),
+                key=os.path.getmtime, reverse=True):
+    sid = os.path.basename(f).replace('.jsonl', '')
+    if sid in seen_ids:
+        continue
+    seen_ids.add(sid)
+
+    # Only care about recently-active sessions (modified in last 24h)
+    mtime = os.path.getmtime(f)
+    if now - mtime > AGE_SECS * 2:
+        continue
+
+    size_kb = os.path.getsize(f) // 1024
+    age_h   = (now - mtime) / 3600
+
+    # Get session name from index
+    name = sid[:8]
+    for idx in glob.glob(os.path.join(home, '.claude', 'projects', '*', 'sessions-index.json')):
+        try:
+            with open(idx) as fh:
+                data = json.load(fh)
+            for e in data.get('entries', []):
+                if e.get('sessionId', '').startswith(sid[:8]):
+                    n = e.get('summary', '')
+                    if n and '(archive' not in n.lower():
+                        name = n
+                    break
+        except Exception:
+            pass
+
+    signals = []
+
+    # Signal: large file
+    if size_kb > LARGE_KB:
+        signals.append(f'large ({size_kb}KB)')
+
+    # Signal: age
+    if age_h > 24:
+        signals.append(f'old ({age_h:.0f}h)')
+
+    # Signal: auto-compaction (look for compaction markers in last 200 lines)
+    try:
+        with open(f, encoding='utf-8', errors='ignore') as fh:
+            lines = fh.readlines()
+        for line in lines[-200:]:
+            try:
+                obj = json.loads(line)
+                # Compaction marker
+                if obj.get('type') == 'summary' and 'compacted' in str(obj).lower():
+                    signals.append('auto-compacted')
+                    break
+                # High context usage
+                usage = obj.get('usage', {})
+                if isinstance(usage, dict):
+                    total = usage.get('input_tokens', 0) + usage.get('cache_read_input_tokens', 0)
+                    if total > 150000:
+                        signals.append(f'high-ctx ({total//1000}K tokens)')
+                        break
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    if signals:
+        results.append({'id': sid[:8], 'name': name, 'signals': signals, 'size_kb': size_kb})
+
+for r in results:
+    print(f\"SIGNAL {r['id']} {r['name']!r} {','.join(r['signals'])}\")
+" | while IFS= read -r line; do
+  if [[ "$line" == SIGNAL* ]]; then
+    SID="$(echo "$line" | awk '{print $2}')"
+    SNAME="$(echo "$line" | awk '{print $3}' | tr -d '"'\''\"')"
+    SIGS="$(echo "$line" | cut -d' ' -f4-)"
+    echo "  [signal] $SID  $SNAME  ($SIGS)"
+
+    # Check if already alerted
+    ALREADY=false
+    for a in "${ALERTED[@]:-}"; do
+      [[ "$a" == "$SID" ]] && ALREADY=true && break
+    done
+
+    if ! $ALREADY; then
+      MSG="⚠️ *Wrap signal detected*%0A%0ASession: \`${SNAME}\` (\`${SID}\`)%0ASignals: ${SIGS}%0A%0AConsider /wrap-session to preserve context."
+      send_telegram "$MSG"
+      NEW_ALERTS+=("$SID")
+      echo "  → Telegram alert sent"
+    else
+      echo "  → Already alerted (suppressed)"
+    fi
+  fi
+done
+
+# Persist new alert state
+if [[ ${#NEW_ALERTS[@]} -gt 0 ]]; then
+  python3 -c "
+import json, os, time
+
+state_file = '$STATE_FILE'
+new_ids    = $(printf '%s\n' "${NEW_ALERTS[@]:-}" | python3 -c "import sys,json; print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))")
+
+state = {'alerted': [], 'updated': ''}
+if os.path.exists(state_file):
+    try:
+        with open(state_file) as f:
+            state = json.load(f)
+    except Exception:
+        pass
+
+# Keep last 50 entries to avoid unbounded growth
+existing = state.get('alerted', [])
+combined = list(dict.fromkeys(existing + new_ids))[-50:]
+state['alerted'] = combined
+state['updated']  = '$(date -u '+%Y-%m-%dT%H:%M:%SZ')'
+
+with open(state_file, 'w') as f:
+    json.dump(state, f, indent=2)
+print(f'State updated — {len(combined)} sessions tracked')
+"
+fi
+
+echo "=== done ==="
