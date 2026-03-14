@@ -187,7 +187,12 @@ function updateFlowStateInYaml(yamlPath, newState, options = {}) {
     // Read YAML content
     let content = fs.readFileSync(yamlPath, 'utf-8');
 
-    // Update flow_state.current
+    // Update flow_state (top-level key: "flow_state: hypothesis")
+    content = content.replace(
+      /^(flow_state:\s*).+$/m,
+      `$1${newState}`
+    );
+    // Also handle nested format if present (flow_state.current)
     content = content.replace(
       /^(\s*current:\s*).+$/m,
       `$1${newState}`
@@ -203,12 +208,21 @@ function updateFlowStateInYaml(yamlPath, newState, options = {}) {
 
     // Update tags if provided
     if (tags.length > 0) {
-      // Find tags section and replace
-      const tagsList = tags.map(tag => `      - ${tag}`).join('\n');
-      content = content.replace(
-        /^(\s*tags:\s*\n)(?:\s*-\s*.+\n)*/m,
-        `$1${tagsList}\n`
-      );
+      const inlineList = JSON.stringify(tags); // e.g. ["tag1","tag2"]
+      // Replace inline format: tags: [] or tags: [existing,tags]
+      if (/^tags:\s*\[.*\]/m.test(content)) {
+        content = content.replace(
+          /^(tags:\s*)\[.*\]/m,
+          `$1${inlineList}`
+        );
+      } else {
+        // Replace multi-line YAML list format
+        const tagsList = tags.map(tag => `- ${tag}`).join('\n');
+        content = content.replace(
+          /^(tags:\s*\n)(?:\s*-\s*.+\n)*/m,
+          `$1${tagsList}\n`
+        );
+      }
     }
 
     // Write back
