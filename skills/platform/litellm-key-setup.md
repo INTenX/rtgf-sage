@@ -48,6 +48,12 @@ curl -X POST http://localhost:4000/key/generate \
 | `budget_duration` | `monthly` for most keys |
 | `models` | Allowlist — restrict to models the client should use |
 | `metadata` | Tags for spend reporting — always include `client` and `project` |
+| `tpm_limit` | Tokens-per-minute cap — use for rate-limiting (all model types) |
+| `max_parallel_requests` | Concurrent request cap — use when `max_budget` is not sufficient |
+
+> **Known limitation — Ollama budget cap:** `max_budget=0` does **not** block Ollama requests. Ollama routes record `$0.00` spend, so the budget comparison `0 ≤ 0` always passes. To rate-limit local model keys, use `tpm_limit` and/or `max_parallel_requests` instead of `max_budget`.
+>
+> Cloud model keys (Anthropic, OpenAI) are correctly capped by `max_budget` since they record non-zero spend.
 
 ## Model Routing
 

@@ -154,12 +154,22 @@ export function flowTransition(rcmRoot, sessionFile, fromState, toState, options
   gitMove(rcmRoot, fromPath, toPath);
 
   // Step 2: Update YAML (flow_state)
+  // The flow dirs use symlinks → rcm/archive/canonical/. updateFlowStateInYaml
+  // correctly follows the symlink and writes to the canonical file, but we must
+  // also stage that canonical file — not just the (unchanged) symlink.
   console.log(`   2. Update flow_state in YAML...`);
   updateFlowStateInYaml(toPath, toState, { tags, qualityScore });
 
-  // Step 3: Git add
+  // Step 3: Git add — stage both the symlink and its resolved canonical target
   console.log(`   3. Git add...`);
-  gitAdd(rcmRoot, toPath);
+  const filesToStage = [toPath];
+  try {
+    const resolved = fs.realpathSync(toPath);
+    if (resolved !== toPath) {
+      filesToStage.push(resolved);
+    }
+  } catch (_) { /* not a symlink or can't resolve — add toPath only */ }
+  gitAdd(rcmRoot, filesToStage);
 
   // Step 4: Git commit
   const sessionId = path.basename(sessionFile, '.yaml').split('_').pop();
